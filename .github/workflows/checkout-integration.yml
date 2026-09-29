@@ -1,0 +1,70 @@
+name: Verificar integração de checkouts
+on:
+  push:
+    branches: [integracao/checkouts-parceiros]
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Aplicar ligação dos botões sem alterar seu visual
+        run: node scripts/integrate-checkout-anchors.mjs
+      - run: npm ci
+      - name: Testes unitários
+        run: node --test tests/*.test.mjs
+      - name: Conferir HTML e destinos dos cinco botões
+        run: node scripts/check-checkout-render.mjs
+      - name: Compilar o site
+        run: npm run build
+      - name: Conferir API pública sem alterar dados
+        run: node scripts/probe-promo-api.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: checkout-verificado-${{ github.run_id }}
+          path: |
+            src/components/Features.jsx
+            promo-api-check.json
+          retention-days: 7
+  registrar_ligacao_verificada:
+    needs: verificar
+    if: github.event_name == 'push' && github.ref == 'refs/heads/integracao/checkouts-parceiros'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integracao/checkouts-parceiros
+      - uses: actions/download-artifact@v4
+        with:
+          name: checkout-verificado-${{ github.run_id }}
+          path: /tmp/checkout-verificado
+      - name: Registrar somente o arquivo testado, sem tocar na master
+        env:
+          VERIFIED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$(git rev-parse HEAD)" != "$VERIFIED_SHA" ]; then
+            echo 'A branch mudou durante os testes. Não sobrescrever alterações.'
+            exit 0
+          fi
+          cp /tmp/checkout-verificado/src/components/Features.jsx src/components/Features.jsx
+          if git diff --quiet -- src/components/Features.jsx; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/components/Features.jsx
+          git commit -m 'Conecta cinco botões aos checkouts aprovados, preservando layout'
+          git push origin HEAD:refs/heads/integracao/checkouts-parceiros
