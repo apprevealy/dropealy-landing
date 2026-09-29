@@ -2,91 +2,79 @@
 
 import { useState, useEffect, useRef } from 'react'
 
-const LazyVideo = ({ src, poster }) => {
-  const videoRef = useRef(null)
-  const [shouldLoad, setShouldLoad] = useState(false)
-  const [isReady, setIsReady] = useState(false)
-  const resolvedPoster = poster || src.replace(/\.[^/.]+$/i, '.jpg')
-
-  useEffect(() => {
-    const el = videoRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setShouldLoad(true)
-        observer.disconnect()
-      }
-    }, { rootMargin: '600px' })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
+function GiftIcon() {
   return (
-    <div className="relative h-64 w-40 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#0b0810] shadow-lg sm:h-96 sm:w-56 md:h-[400px] md:w-64">
-      <img src={resolvedPoster} alt="" aria-hidden="true" className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${isReady ? 'opacity-0' : 'opacity-100'}`} />
-      <video ref={videoRef} src={shouldLoad ? src : undefined} autoPlay={shouldLoad} loop muted playsInline preload={shouldLoad ? 'metadata' : 'none'} aria-hidden="true" onLoadedData={() => setIsReady(true)} onCanPlay={() => setIsReady(true)} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`} />
-    </div>
+    <svg className="arsenal-bonus__icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 7h-2.18A3 3 0 0 0 12 5.94 3 3 0 0 0 6.18 7H4a2 2 0 0 0-2 2v2a1 1 0 0 0 1 1h1v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7h1a1 1 0 0 0 1-1V9a2 2 0 0 0-2-2ZM9 4a1 1 0 0 1 1 1v2H9a1.5 1.5 0 1 1 0-3Zm5 1a1 1 0 1 1 1 1.5H14V5Zm-9 6V9h6v2H5Zm1 2h5v6H6v-6Zm12 6h-5v-6h5v6Zm2-8h-7V9h7v2Z" />
+    </svg>
+  )
+}
+
+function CrownIcon() {
+  return (
+    <svg className="arsenal-anchor__crown" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m3.25 7.1 4.1 3.25 3.58-5.7a1.25 1.25 0 0 1 2.14 0l3.58 5.7 4.1-3.25a1 1 0 0 1 1.58.97l-1.5 9.18H3.17l-1.5-9.18a1 1 0 0 1 1.58-.97ZM4 19h16a1 1 0 1 1 0 2H4a1 1 0 1 1 0-2Z" />
+    </svg>
   )
 }
 
 export default function Features() {
   const [openIndex, setOpenIndex] = useState(-1)
-  const [showCouponInput, setShowCouponInput] = useState(false)
-  const [coupon, setCoupon] = useState('')
-  const [isValidCoupon, setIsValidCoupon] = useState(false)
-  const [isInvalidCoupon, setIsInvalidCoupon] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
-  const [couponSecondsLeft, setCouponSecondsLeft] = useState(7 * 60)
-
-  const validCoupons = ['PRESENTE50']
+  const [deliveryCardIndex, setDeliveryCardIndex] = useState(0)
+  const deliveryCarouselRef = useRef(null)
 
   const steps = [
     {
       id: 'ugc-creator',
       number: '01',
-      title: 'UGC Creator com Inteligência Artificial',
-      subtitle: 'Gere vídeos de conversão em massa sem precisar contratar gravadores ou aparecer na câmera.',
-      description: 'Essa funcionalidade permite cruzar avatares hiper-realistas, cenários estratégicos e scripts validados para criar o criativo perfeito para o seu produto. Gere vídeos de UGC (conteúdo gerado por usuário) ultra-realistas com total controle sobre as narrativas e estética visual.',
+      shortTitle: 'Catálogo de produtos',
+      eyebrow: 'Catálogo de produtos',
+      title: 'Encontre o próximo produto da sua loja.',
+      description: 'Explore produtos com fotos, descrições e informações técnicas reunidas para preparar seus anúncios.',
       bullets: [
-        'Diversidade e Personalidade: Escolha entre dezenas de variações de tons de pele, cores de olhos, estilos de cabelo e perfis comportamentais.',
-        'Customização de Cenários: Adapte o ambiente de fundo do vídeo para dar mais naturalidade e contexto à sua oferta.',
-        'Fábrica de Criativos: Combine avatares e prompts exclusivos para testar dezenas de variações do mesmo anúncio em minutos.',
+        'Tudo em um lugar: fotos e detalhes do produto.',
+        'Escolha com clareza: consulte preço e estoque.',
+        'Pronto para preparar: selecione e avance para o anúncio.',
       ],
     },
     {
       id: 'radar-produtos',
       number: '02',
-      title: 'Radar de Produtos Inteligente',
-      subtitle: 'Encontre produtos validados e tendências ocultas antes de todo o mercado.',
-      description: 'Essa funcionalidade atua como um scanner inteligente que varre as maiores plataformas de vendas 24 horas por dia. A cada 6 horas, o sistema atualiza o ranking de forma automática, mostrando exatamente quais produtos estão subindo e quais estão descendo em faturamento, permitindo que você minere apenas os campeões de audiência.',
+      shortTitle: 'Contas conectadas',
+      eyebrow: 'Contas conectadas',
+      title: 'Conecte suas contas. Centralize sua operação.',
+      description: 'Organize suas contas de marketplace em um só lugar e escolha onde publicar seus produtos.',
       bullets: [
-        'Atualização em Tempo Real: Dados renovados a cada 6 horas para você pegar a onda do produto no momento exato do pico de vendas.',
-        'Varredura Multiplataforma: Monitoramento constante em diversos marketplaces para garantir o fornecimento de ideias novas e criativas.',
-        'Nichos Validados: Filtre facilmente por variações de nichos de alta conversão e encontre apenas produtos com excelentes avaliações dos clientes.',
+        'Tudo conectado: reúna suas contas no mesmo painel.',
+        'Status à vista: acompanhe suas conexões.',
+        'Destino definido: escolha a conta de cada publicação.',
       ],
     },
     {
       id: 'animacoes',
       number: '03',
-      title: 'Engenharia de Ambientes Inteligente',
-      subtitle: 'Combine suas melhores referências visuais e crie o cenário perfeito em segundos.',
-      description: 'Essa funcionalidade permite fazer o upload de diferentes imagens e organizá-las na ordem certa. A IA da Revealy analisa os elementos e gera automaticamente um prompt avançado que une todas as características, texturas e iluminações das fotos enviadas em um único cenário ultra-realista.',
+      shortTitle: 'Publicação integrada',
+      eyebrow: 'Publicação integrada',
+      title: 'Do catálogo ao anúncio, em poucos passos.',
+      description: 'Aproveite as informações do produto, revise os detalhes e publique na sua conta conectada.',
       bullets: [
-        'Fusão de Referências: Junte fotos de locais diferentes para criar um estúdio ou ambiente totalmente novo e exclusivo.',
-        'Prompt Automatizado: Esqueça termos técnicos difíceis. A ferramenta lê as imagens e escreve o comando perfeito por você.',
-        'Consistência Cenográfica: Mantenha a mesma identidade visual e qualidade de fundo em toda a sua série de vídeos de UGC.',
+        'Menos retrabalho: aproveite os dados do catálogo.',
+        'Revisão antes do envio: confira os detalhes.',
+        'Conta selecionada: publique no destino certo.',
       ],
     },
     {
       id: 'revealy-boost',
       number: '04',
-      title: 'Revealy Boost',
-      subtitle: 'Desbloqueie o TikTok Shop e conquiste seguidores em massa de forma 100% segura.',
-      description: 'O Revealy Boost é a nossa tecnologia exclusiva focada em tração orgânica acelerada. Ele otimiza a distribuição dos seus vídeos para forçar o algoritmo a entregar seu conteúdo para o público certo, gerando um ganho massivo de seguidores reais sem infringir nenhuma diretriz da plataforma e sem o risco de compra de bots.',
+      shortTitle: 'Gestão de anúncios',
+      eyebrow: 'Gestão de anúncios',
+      title: 'Seus anúncios organizados. Mais controle para vender.',
+      description: 'Visualize suas publicações, acompanhe os status e saiba em qual conta cada produto está anunciado.',
       bullets: [
-        'Passaporte TikTok Shop: Alcance os requisitos mínimos de seguidores rapidamente para liberar sua aba de vendas e começar a faturar.',
-        'Crescimento 100% Legalizado: Estratégia baseada estritamente nas regras do algoritmo, mantendo a saúde e a integridade da sua conta blindadas.',
-        'Público Qualificado: Atraia seguidores reais que realmente consomem o seu nicho, prontos para virarem compradores dos seus produtos.',
+        'Visão centralizada: consulte suas publicações.',
+        'Status claros: acompanhe a situação dos anúncios.',
+        'Organização por conta: identifique onde cada produto está.',
       ],
     },
   ]
@@ -109,63 +97,11 @@ export default function Features() {
     setCurrentStep(index)
   }
 
-  const applyCoupon = () => {
-    const upperCoupon = coupon.trim().toUpperCase()
-    setCoupon(upperCoupon)
-    if (validCoupons.includes(upperCoupon)) {
-      setIsValidCoupon(true)
-      setIsInvalidCoupon(false)
-      setCouponSecondsLeft(7 * 60)
-    } else {
-      setIsValidCoupon(false)
-      setIsInvalidCoupon(true)
-    }
-  }
-
-  const getPrice = (planName) => {
-    if (planName === 'Mensal') {
-      return isValidCoupon ? 147 : 375
-    } else {
-      return isValidCoupon ? 297 : 695
-    }
-  }
-
   const getCheckoutLink = (planName) => {
-    if (isValidCoupon) {
-      return planName === 'Mensal'
-        ? 'https://checkout.perfectpay.com.br/pay/PPU38CQDIKL'
-        : 'https://checkout.perfectpay.com.br/pay/PPU38CQDIKN'
-    } else {
-      return planName === 'Mensal'
-        ? 'https://checkout.perfectpay.com.br/pay/PPU38CQDJIE'
-        : 'https://checkout.perfectpay.com.br/pay/PPU38CQDIQM'
-    }
+    return planName === 'Mensal'
+      ? 'https://checkout.perfectpay.com.br/pay/PPU38CQDJIE'
+      : 'https://checkout.perfectpay.com.br/pay/PPU38CQDIQM'
   }
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const couponFromUrl =
-      urlParams.get('cupom') ||
-      urlParams.get('coupon') ||
-      urlParams.get('coupon_code')
-    if (couponFromUrl) {
-      const upperCoupon = couponFromUrl.trim().toUpperCase()
-      setCoupon(upperCoupon)
-      setShowCouponInput(true)
-      setIsValidCoupon(false)
-      setIsInvalidCoupon(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!isValidCoupon || couponSecondsLeft <= 0) return
-    const timer = window.setInterval(() => {
-      setCouponSecondsLeft((seconds) => Math.max(0, seconds - 1))
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [isValidCoupon, couponSecondsLeft])
-
-  const couponTimer = `${String(Math.floor(couponSecondsLeft / 60)).padStart(2, '0')}:${String(couponSecondsLeft % 60).padStart(2, '0')}`
 
   const faqs = [
     {
@@ -214,84 +150,61 @@ export default function Features() {
     },
   ]
 
-  const videos = [
-    {
-      src: '/assets/Vd%2001.MP4',
-    },
-    {
-      src: '/assets/Vd%2003.mp4',
-    },
-    {
-      src: '/assets/Vd%2004.mp4',
-    },
-    {
-      src: '/assets/Vd%2006.mp4',
-    },
-    {
-      src: '/assets/Vd%2007.MP4',
-    },
-    {
-      src: '/assets/Vd%2005.mp4',
-    },
-    {
-      src: '/assets/Vd%2008.mp4',
-    },
-    {
-      src: '/assets/Vd%2009.MP4',
-    },
-    {
-      src: '/assets/T%C3%8ANIS%20GIRANDO%20NA%20M%C3%83O.mp4',
-    },
-    {
-      src: '/assets/DIVULGANDO%20LOOK%20EM%20FRENTE%20AO%20ESPELHO.mp4',
-    },
-    {
-      src: '/assets/VD%20MANEQUIN.mp4',
-    },
-    {
-      src: '/assets/vd-site-01.mp4',
-    },
-    {
-      src: '/assets/vd-site-02.mp4',
-    },
-    {
-      src: '/assets/vd-site-03.mp4',
-    },
-    {
-      src: '/assets/vd-site-04.mp4',
-    },
-  ]
-
   const deliveryCards = [
     {
       id: 'produtos-validados',
-      title: <>Produtos<br />Validados</>,
-      description: <>Encontre produtos que já estão<br />vendendo no TikTok Shop.</>,
-      items: ['Tendências em alta', 'Produtos campeões', 'Análise com IA'],
+      title: <>Catálogo<br />organizado</>,
+      description: <>Produtos e informações reunidos<br />para facilitar sua rotina.</>,
+      items: ['Fotos e descrições', 'Dados do produto', 'Preço e estoque'],
       icon: 'bolt',
-      background: 'radial-gradient(circle at 85% 8%, rgba(81,20,144,.58), transparent 42%), linear-gradient(145deg, #0c0b0e 0%, #09090b 100%)',
+      background: 'radial-gradient(circle at 85% 8%, rgba(245,158,43,.30), transparent 42%), linear-gradient(145deg, #0c0b0e 0%, #09090b 100%)',
     },
     {
       id: 'conteudo-ia',
-      title: <>Conteúdo<br />com IA</>,
-      description: <>Crie vídeos prontos para<br />publicar sem gravar.</>,
-      items: ['Vídeos automáticos', 'Roteiros prontos', 'Sem aparecer'],
+      title: <>Publicação<br />integrada</>,
+      description: <>Prepare seu anúncio e envie para<br />a sua conta conectada.</>,
+      items: ['Seleção de produto', 'Definição de preço', 'Acompanhamento do envio'],
       icon: 'code',
       reverse: true,
-      background: 'radial-gradient(circle at 17% 100%, rgba(81,20,144,.82), transparent 42%), linear-gradient(145deg, #0b0b0d 0%, #09090b 100%)',
+      background: 'radial-gradient(circle at 17% 100%, rgba(245,158,43,.36), transparent 42%), linear-gradient(145deg, #0b0b0d 0%, #09090b 100%)',
     },
     {
       id: 'escala-inteligente',
-      title: <>Escala<br />Inteligente</>,
-      description: <>Produza mais conteúdo<br />e aumente suas vendas.</>,
-      items: ['Publicação estratégica', 'Produção em massa', 'Crescimento acelerado'],
+      title: <>Gestão<br />de anúncios</>,
+      description: <>Veja os anúncios criados pela<br />Dropealy em um só painel.</>,
+      items: ['Status de publicação', 'Conta vinculada', 'Acesso ao anúncio'],
       icon: 'chart',
-      background: 'radial-gradient(circle at 7% 0%, rgba(81,20,144,.8), transparent 38%), linear-gradient(145deg, #0b0b0d 0%, #09090b 100%)',
+      background: 'radial-gradient(circle at 7% 0%, rgba(245,158,43,.34), transparent 38%), linear-gradient(145deg, #0b0b0d 0%, #09090b 100%)',
     },
   ]
 
+  useEffect(() => {
+    const carousel = deliveryCarouselRef.current
+    const mobileViewport = window.matchMedia('(max-width: 1023px)')
+
+    if (!carousel || !mobileViewport.matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return undefined
+    }
+
+    const timer = window.setInterval(() => {
+      setDeliveryCardIndex((currentIndex) => {
+        const nextIndex = (currentIndex + 1) % deliveryCards.length
+        const nextCard = carousel.children[nextIndex]
+
+        if (nextCard) {
+          const centeredPosition = nextCard.offsetLeft - (carousel.clientWidth - nextCard.clientWidth) / 2
+          carousel.scrollTo({ left: centeredPosition, behavior: 'smooth' })
+        }
+
+        return nextIndex
+      })
+    }, 3000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
   const DeliveryIcon = ({ type }) => (
-    <div className="flex h-[68px] w-[68px] items-center justify-center rounded-[20px] border border-[#9D63DC]/60 bg-[#281936]/80 text-[#AB7AFF] shadow-[inset_0_0_24px_rgba(157,57,220,.12)] sm:h-[78px] sm:w-[78px]">
+    <div className="flex h-[68px] w-[68px] items-center justify-center rounded-[20px] border border-[#F59E2B]/60 bg-[#251705]/80 text-[#F59E2B] shadow-[inset_0_0_24px_rgba(245,158,43,.12)] sm:h-[78px] sm:w-[78px]">
       {type === 'bolt' ? (
         <svg width="37" height="37" viewBox="0 0 24 24" fill="none"><path d="m13 2-9 11h7l-1 9 9-12h-7l1-8Z" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" /></svg>
       ) : type === 'code' ? (
@@ -306,68 +219,44 @@ export default function Features() {
     <>
       <div className="relative w-full h-[89px] overflow-hidden opacity-70 bg-[#050208]">
         <div className="flex w-max animate-scroll-left">
-          <img
-            src="/assets/marcas.png"
-            alt="Marcas parceiras"
-            className="h-[89px] w-[1692px]"
-          />
-          <img
-            src="/assets/marcas.png"
-            alt="Marcas parceiras"
-            className="h-[89px] w-[1692px]"
-          />
+          {[0, 1].map((group) => (
+            <div key={group} aria-hidden={group === 1} className="flex h-[89px] min-w-[720px] items-center justify-around gap-16 px-10 sm:min-w-[960px] sm:gap-28">
+              <div className="relative h-[89px] w-[116px] shrink-0 overflow-hidden" role="img" aria-label="Amazon">
+                <img src="/assets/marcas.png" alt="" className="absolute left-[-212px] top-0 h-[89px] w-[1692px] max-w-none" />
+              </div>
+              <div className="relative h-[89px] w-[112px] shrink-0 overflow-hidden" role="img" aria-label="Shopee">
+                <img src="/assets/marcas.png" alt="" className="absolute left-[-338px] top-0 h-[89px] w-[1692px] max-w-none" />
+              </div>
+              <div className="relative h-[89px] w-[120px] shrink-0 overflow-hidden" role="img" aria-label="Mercado Livre">
+                <img src="/assets/marcas.png" alt="" className="absolute left-[-471px] top-0 h-[89px] w-[1692px] max-w-none" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
       <section className="relative w-full bg-[#050208] px-6 py-24">
       <div className="mx-auto max-w-[1500px] text-center">
         <span
-          className="inline-flex h-[53px] w-[268px] items-center justify-center rounded-full text-sm font-semibold uppercase tracking-wide text-white"
+          className="inline-flex h-[53px] w-[268px] items-center justify-center rounded-full text-sm font-semibold uppercase tracking-wide text-black"
           style={{
-            background:
-              'linear-gradient(90deg, #511490 0%, #AB7BFF 50%, #511490 97%)',
+            background: 'linear-gradient(135deg, #FFCF6E, #F59E2B)',
           }}
         >
-          O que entregamos
+          O que a Dropealy entrega
         </span>
 
         <h2 className="mt-6 font-articulat text-3xl font-semibold leading-tight text-white sm:text-4xl md:text-5xl">
-          Tudo o que um estrategista{' '}
-          <span className="hidden sm:inline">
-            <br />
-          </span>
-          precisa{' '}
-          <span
-            className="bg-clip-text text-transparent"
-            style={{
-              backgroundImage:
-                'linear-gradient(90deg, #AB7BFF 19%, #FFFFFF 62%, #AB7BFF 100%)',
-            }}
-          >
-            para
-          </span>{' '}
-          vender{' '}
-          <span
-            className="bg-clip-text text-transparent"
-            style={{
-              backgroundImage:
-                'linear-gradient(90deg, #AB7BFF 19%, #FFFFFF 62%, #AB7BFF 100%)',
-            }}
-          >
-            mais.
-          </span>
+          Do catálogo ao anúncio,<br />
+          <span className="text-[#F5A623]">tudo em um só lugar.</span>
         </h2>
 
         <p className="mx-auto mt-4 max-w-3xl font-articulat text-xl text-white sm:text-2xl">
-          Descubra produtos validados, crie conteúdo com{' '}
-          <span className="hidden sm:inline">
-            <br />
-          </span>
-          IA e escale suas vendas em uma única plataforma.
+          Encontre produtos, publique no Mercado Livre e acompanhe sua operação.
         </p>
       </div>
 
-      <div className="delivery-carousel mx-auto mt-16 flex w-full max-w-[1400px] snap-x snap-mandatory gap-5 overflow-x-auto px-[7vw] pb-5 sm:px-8 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible lg:px-0 lg:pb-0">
+      <div ref={deliveryCarouselRef} className="delivery-carousel mx-auto mt-16 flex w-full max-w-[1400px] snap-x snap-mandatory gap-5 overflow-x-auto px-[7vw] pb-5 sm:px-8 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible lg:px-0 lg:pb-0">
         {deliveryCards.map((card) => (
           <article
             key={card.id}
@@ -375,9 +264,8 @@ export default function Features() {
             style={{ background: card.background }}
           >
             {card.id === 'escala-inteligente' && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[38%] opacity-60" style={{ background: 'linear-gradient(140deg, transparent 0 28%, #250746 28% 38%, transparent 38% 48%, #3c086e 48% 63%, #1f053d 63%)' }} />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[38%] opacity-60" style={{ background: 'linear-gradient(140deg, transparent 0 28%, #3a2305 28% 38%, transparent 38% 48%, #5a3404 48% 63%, #2d1a04 63%)' }} />
             )}
-
             <div className="relative z-10 flex h-full flex-1 flex-col">
               <DeliveryIcon type={card.icon} />
               <div className={card.reverse ? 'order-2 mt-auto pt-9' : ''}>
@@ -393,7 +281,7 @@ export default function Features() {
                 <div className="flex flex-col gap-3">
                   {card.items.map((item, index) => (
                     <div key={item} className="flex min-h-[72px] items-center gap-4 rounded-[18px] border border-white/10 bg-black/70 px-4 sm:min-h-[80px] sm:px-5">
-                      <span className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-[15px] border border-[#9D63DC]/60 bg-[#281936]/80 font-articulat text-[28px] text-white sm:h-[58px] sm:w-[58px] sm:text-[31px]">
+                      <span className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-[15px] border border-[#F59E2B]/60 bg-[#251705]/80 font-articulat text-[28px] text-white sm:h-[58px] sm:w-[58px] sm:text-[31px]">
                         {index + 1}
                       </span>
                       <span className="font-articulat text-[17px] leading-tight text-white/90 sm:text-[20px]">{item}</span>
@@ -407,27 +295,42 @@ export default function Features() {
       </div>
 
       <div className="mx-auto mt-24 max-w-6xl text-center">
-        <h2 className="font-manrope text-2xl font-semibold leading-tight text-white sm:text-3xl md:text-4xl">
-          A tecnologia que cria Avatares UGC com
-          <br />
-          IA.{' '}
-          <span
-            className="bg-clip-text text-transparent"
-            style={{
-              backgroundImage:
-                'linear-gradient(90deg, #AB7BFF 19%, #FFFFFF 62%, #AB7BFF 100%)',
-            }}
-          >
-            Escale suas vendas sem aparecer.
-          </span>
+        <h2 className="font-manrope text-3xl font-semibold leading-tight text-white sm:text-4xl md:text-5xl">
+          Sua operação de vendas,<br />
+          <span className="text-[#F5A623]">do catálogo ao anúncio.</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-3xl font-articulat text-base text-white sm:text-lg">
-          A Revealy é uma plataforma avançada de Inteligência Artificial focada na criação automatizada de vídeos e avatares hiper-realistas de UGC para explodir suas vendas. Construa um ecossistema de conteúdo. Eleve o padrão da sua operação e venda no piloto automático.
+        <p className="mx-auto mt-6 max-w-3xl font-articulat text-base leading-relaxed text-white/75 sm:text-lg">
+          A Dropealy reúne produtos, publicação no Mercado Livre e acompanhamento<br className="hidden sm:block" /> de anúncios em uma única plataforma. Mais organização para você começar<br className="hidden sm:block" /> e gerenciar sua operação.
         </p>
 
-        <div className="relative mx-auto mt-12 w-full max-w-6xl overflow-hidden rounded-[24px] border border-white/10 bg-[#0D0D0D] p-8 sm:p-10 lg:p-12">
-          <div className="absolute -left-32 top-0 h-[400px] w-[400px] rounded-full bg-[#511490] opacity-30 blur-[120px]" />
+        <div className="video-feature-shell">
+          <div className="video-feature-copy">
+            <div className="video-feature-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m13.2 2-8 11h6.3L10.8 22l8-11h-6.3l.7-9Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <p className="video-feature-eyebrow">{steps[currentStep].eyebrow}</p>
+            <h3>{steps[currentStep].title}</h3>
+            <p className="video-feature-description">{steps[currentStep].description}</p>
+            <ul>
+              {steps[currentStep].bullets.map((bullet) => {
+                const [lead, ...rest] = bullet.split(':')
+                return (
+                  <li key={bullet}>
+                    <span>•</span>
+                    <p><strong>{lead}{rest.length ? ':' : ''}</strong>{rest.join(':')}</p>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+          <div className="video-feature-stage" aria-label="Espaço reservado para vídeo" />
+        </div>
+
+        <div className="hidden">
+          <div className="absolute -left-32 top-0 h-[400px] w-[400px] rounded-full bg-[#F59E2B] opacity-10 blur-[120px]" />
 
           <div className="relative z-10">
             <div className="mb-6 flex justify-end">
@@ -437,7 +340,7 @@ export default function Features() {
                     key={index}
                     onClick={() => goToStep(index)}
                     className={`h-2 w-2 rounded-full transition ${
-                      index === currentStep ? 'bg-purple-400' : 'bg-white/20'
+                      index === currentStep ? 'bg-[#F5A623]' : 'bg-white/25'
                     }`}
                   />
                 ))}
@@ -446,24 +349,21 @@ export default function Features() {
 
             <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
               <div className="flex flex-col gap-6">
-                <div className="flex h-[56px] w-[56px] items-center justify-center rounded-[16px] border border-purple-400/30 bg-purple-900/20">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M13 2L4.09 12.11C3.89 12.35 3.78 12.65 3.78 12.96C3.78 13.58 4.28 14.08 4.9 14.08H11V22L19.91 11.89C20.11 11.65 20.22 11.35 20.22 11.04C20.22 10.42 19.72 9.92 19.1 9.92H13V2Z" stroke="#AB7BFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                <div className="flex h-[56px] w-[56px] items-center justify-center rounded-[16px] border border-[#F59E2B]/60 bg-[#251705]/70 text-[#FFBF3F]">
+                  {currentStep === 1 ? (
+                    <svg width="31" height="31" viewBox="0 0 24 24" fill="none"><path d="m10.5 13.5 3-3M8.2 15.8l-1.4 1.4a3.4 3.4 0 0 1-4.8-4.8l3.2-3.2A3.4 3.4 0 0 1 10 9M15.8 8.2l1.4-1.4a3.4 3.4 0 1 1 4.8 4.8l-3.2 3.2A3.4 3.4 0 0 1 14 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                  ) : currentStep === 2 ? (
+                    <svg width="31" height="31" viewBox="0 0 24 24" fill="none"><path d="M12 16V3m0 0L7 8m5-5 5 5M5 14v6h14v-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  ) : currentStep === 3 ? (
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M4 13v-2c0-1.1.9-2 2-2h3l8-5v16l-8-5H6c-1.1 0-2-.9-2-2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="m8 15 1.5 5H13l-2-5M20 9v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                  ) : (
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="m4 7 8-4 8 4-8 4-8-4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M4 7v10l8 4 8-4V7M12 11v10" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>
+                  )}
                 </div>
 
-                <h3 className="text-left font-manrope text-2xl font-semibold leading-tight sm:text-3xl">
-                  <span
-                    className="bg-clip-text text-transparent"
-                    style={{
-                      backgroundImage:
-                        'linear-gradient(90deg, #AB7BFF 19%, #FFFFFF 62%, #AB7BFF 100%)',
-                    }}
-                  >
-                    {steps[currentStep].title}
-                    <br />
-                    {steps[currentStep].subtitle}
-                  </span>
+                <p className="text-left font-articulat text-xs font-bold uppercase tracking-[.28em] text-[#F5A623]">{steps[currentStep].eyebrow}</p>
+                <h3 className="text-left font-manrope text-3xl font-semibold leading-tight text-white sm:text-4xl">
+                  {steps[currentStep].title}
                 </h3>
 
                 <p className="text-left text-sm leading-relaxed text-white">
@@ -473,27 +373,66 @@ export default function Features() {
                 <ul className="flex flex-col gap-3 text-left text-sm text-white/80">
                   {steps[currentStep].bullets.map((bullet, index) => (
                     <li key={index} className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-white" />
+                      <span className="final-call__check">✓</span>
                       <span><strong className="text-white">{bullet.split(':')[0]}:</strong>{bullet.split(':').slice(1).join(':')}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-[20px] border border-white/10 bg-[#161616]">
-                {currentStep < 2 ? (
-                  <video
-                    key={steps[currentStep].id}
-                    src={currentStep === 0 ? '/assets/ugc-cam-animation-01.mp4' : '/assets/ugc-cam-animation-02.mp4'}
-                    poster={currentStep === 0 ? '/assets/ugc-cam-animation-01.jpg' : '/assets/ugc-cam-animation-02.jpg'}
-                    autoPlay
-                    muted
-                    playsInline
-                    preload="metadata"
-                    onEnded={nextStep}
-                    className="h-full w-full object-cover"
-                  />
-                ) : null}
+              <div className="dropealy-mockup relative flex aspect-video w-full overflow-hidden rounded-[20px] border border-[#F59E2B]/35 bg-[#111216] p-4 text-left sm:p-6">
+                <div className="w-[27%] border-r border-white/10 pr-3 text-[10px] text-white/60 sm:text-xs">
+                  <strong className="mb-6 block text-base text-white sm:text-lg"><span className="text-[#F5A623]">D</span> Dropealy</strong>
+                  {['Catálogo', 'Publicação', 'Anúncios', 'Contas', 'Configurações'].map((item) => <div key={item} className={`mb-3 rounded-lg px-2 py-2 ${item === ['Catálogo', 'Contas', 'Publicação', 'Anúncios'][currentStep] ? 'bg-[#F59E2B]/20 text-[#FFBF3F]' : ''}`}>{item}</div>)}
+                </div>
+                <div className="flex-1 pl-4 sm:pl-6">
+                  <h4 className="text-xl font-bold text-white sm:text-3xl">{steps[currentStep].shortTitle}</h4>
+                  {currentStep === 1 ? (
+                    <div className="mt-4 space-y-3">
+                      {['Conta principal', 'Loja 2'].map((account) => (
+                        <div key={account} className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/35 p-3">
+                          <img src="/assets/mercado-livre.svg" alt="Mercado Livre" className="h-10 w-10 flex-none rounded-full object-contain" />
+                          <div className="min-w-0 flex-1"><strong className="block text-[10px] text-white sm:text-sm">Mercado Livre</strong><span className="text-[8px] text-white/55 sm:text-xs">{account}</span></div>
+                          <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-[8px] text-emerald-400 sm:text-xs">● Conectada</span>
+                          <span className="text-white/55">⋮</span>
+                        </div>
+                      ))}
+                      <button className="flex w-full items-center justify-center gap-3 rounded-xl border border-dashed border-white/25 py-4 text-[10px] font-semibold text-white sm:text-sm"><span className="text-xl font-light">＋</span> Adicionar conta</button>
+                    </div>
+                  ) : currentStep === 2 ? (
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between text-[8px] text-white/45 sm:text-[11px]"><span className="text-[#F5A623]">● &nbsp; Produto</span><span>② &nbsp; Revisão</span><span>③ &nbsp; Publicação</span></div>
+                      <div className="mt-3 grid grid-cols-[30%_1fr] gap-3">
+                        <div className="aspect-square overflow-hidden rounded-lg border border-white/15 bg-white/90"><img src="/assets/ventilador-mesa.png" alt="Ventilador de Mesa Portátil USB" className="h-full w-full object-cover" /></div>
+                        <div><strong className="block text-[9px] text-white sm:text-xs">Ventilador de Mesa Portátil USB</strong><label className="mt-2 block text-[7px] text-white/50 sm:text-[10px]">Título do anúncio</label><div className="mt-1 rounded-md border border-white/15 bg-white/[.03] px-2 py-1.5 text-[7px] text-white/70 sm:text-[10px]">Ventilador de Mesa Portátil USB</div><label className="mt-2 block text-[7px] text-white/50 sm:text-[10px]">Descrição</label><div className="mt-1 h-9 rounded-md border border-white/15 bg-white/[.03] px-2 py-1.5 text-[7px] text-white/70 sm:text-[10px]">Compacto, portátil e fácil de usar.</div></div>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-[8px] sm:text-[10px]"><div><span className="text-white/50">Publicar em</span><div className="mt-1 flex items-center gap-2 rounded-md border border-white/15 px-2 py-1.5"><img src="/assets/mercado-livre.svg" alt="" className="h-4 w-4"/> Mercado Livre</div></div><div><span className="text-white/50">Conta</span><div className="mt-1 rounded-md border border-white/15 px-2 py-1.5">Conta principal⌄</div></div></div>
+                      <button className="mt-3 w-full rounded-md bg-[linear-gradient(135deg,#FFCF6E,#F59E2B)] py-2 text-[9px] font-bold text-black sm:text-xs">Publicar anúncio</button>
+                    </div>
+                  ) : currentStep === 3 ? (
+                    <div className="mt-3">
+                      <div className="flex h-8 items-center rounded-lg border border-white/15 bg-white/[.03] px-3 text-[8px] text-white/35 sm:text-[11px]">⌕ &nbsp; Buscar anúncio</div>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-[8px] text-white/70 sm:text-[10px]"><div className="rounded-md border border-white/15 px-2 py-1.5">Todas as contas⌄</div><div className="rounded-md border border-white/15 px-2 py-1.5">Todos os status⌄</div></div>
+                      <div className="mt-2 overflow-hidden rounded-lg border border-white/10 bg-black/25">
+                        <div className="grid grid-cols-[1.5fr_.85fr_.7fr_12px] gap-2 border-b border-white/10 px-2 py-1.5 text-[7px] text-white/40 sm:text-[9px]"><span>Produto</span><span>Conta</span><span>Status</span><span /></div>
+                        {[
+                          { name: 'Ventilador de Mesa', account: 'Conta principal', status: 'Ativo', image: '/assets/ventilador-mesa.png', active: true },
+                          { name: 'Afiador de Facas', account: 'Loja 2', status: 'Pausado', emoji: '🔪', active: false },
+                          { name: 'Almofada Lombar', account: 'Conta principal', status: 'Ativo', emoji: '◼', active: true },
+                        ].map((item) => (
+                          <div key={item.name} className="grid grid-cols-[1.5fr_.85fr_.7fr_12px] items-center gap-2 border-b border-white/10 px-2 py-1.5 last:border-0">
+                            <div className="flex min-w-0 items-center gap-2">{item.image ? <img src={item.image} alt="" className="h-7 w-7 rounded object-cover" /> : <span className="flex h-7 w-7 items-center justify-center rounded bg-white/10 text-sm">{item.emoji}</span>}<span className="truncate text-[7px] font-semibold text-white sm:text-[9px]">{item.name}</span></div>
+                            <span className="truncate text-[7px] text-white/55 sm:text-[9px]">{item.account}</span>
+                            <span className={`inline-flex w-fit items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-[7px] sm:text-[9px] ${item.active ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}><span aria-hidden="true">●</span><span>{item.status}</span></span>
+                            <span className="text-white/45">⋮</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <><div className="mt-4 h-9 rounded-xl border border-white/15 bg-white/[.03]" /><div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">{['Ventilador de Mesa', 'Afiador de Facas', 'Almofada Lombar'].map((item) => <div key={item} className="overflow-hidden rounded-xl border border-white/10 bg-black/40 p-2"><div className="aspect-square rounded-lg bg-gradient-to-br from-white/20 to-white/[.03]"/><p className="mt-2 text-[8px] font-semibold text-white sm:text-xs">{item}</p><div className="mt-2 rounded-md bg-[linear-gradient(135deg,#FFCF6E,#F59E2B)] py-1 text-center text-[8px] font-bold text-black sm:text-xs">Anunciar →</div></div>)}</div></>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -504,16 +443,16 @@ export default function Features() {
             <button
               key={step.id}
               onClick={() => goToStep(index)}
-              className={`flex h-[59px] items-center justify-start gap-4 rounded-full border text-sm font-semibold tracking-wide text-white transition pl-6 ${
+              className={`flex h-[59px] items-center justify-start gap-4 whitespace-nowrap rounded-full border text-sm font-semibold tracking-wide text-white transition pl-6 ${
                 currentStep === index
-                  ? 'border-[#3b2c55]'
-                  : 'border-purple-400/30 bg-purple-900/10 hover:border-purple-400/60 hover:bg-purple-900/30'
+                  ? 'border-[#FFCF6E] text-black'
+                  : 'border-[#F59E2B]/55 bg-black/30 hover:border-[#F59E2B]'
               }`}
               style={{
                 background: currentStep === index
-                  ? 'linear-gradient(90deg, #AB7AFF 0%, #C19DFF 50%, #AB7AFF 100%)'
-                  : 'linear-gradient(90deg, rgba(171, 122, 255, 0.05) 0%, rgba(171, 122, 255, 0.3) 100%)',
-                width: '209px',
+                  ? 'linear-gradient(135deg, #FFCF6E, #F59E2B)'
+                  : 'linear-gradient(90deg, rgba(245,158,43,.02), rgba(245,158,43,.08))',
+                width: '235px',
               }}
             >
               {step.id === 'ugc-creator' && (
@@ -523,14 +462,14 @@ export default function Features() {
                     <path d="M16.025 22V12.8287L14.005 13.35V11.835L16.8069 10.597H18.0286V22H16.025Z" fill="white" />
                     <defs>
                       <linearGradient id="paint0_linear_ugc" x1="0" y1="16.5" x2="33" y2="16.5" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#CDC4EC" />
-                        <stop offset="0.35" stop-color="#AE78F4" />
-                        <stop offset="0.65" stop-color="#545096" />
-                        <stop offset="1" stop-color="#303579" />
+                        <stop stop-color="#FFCF6E" />
+                        <stop offset="0.35" stop-color="#F59E2B" />
+                        <stop offset="0.65" stop-color="#B86A00" />
+                        <stop offset="1" stop-color="#5A3000" />
                       </linearGradient>
                     </defs>
                   </svg>
-                  UGC Creator
+                  Catálogo de produtos
                 </>
               )}
               {step.id === 'radar-produtos' && (
@@ -540,14 +479,14 @@ export default function Features() {
                     <path d="M12.3797 22V20.5828C13.1073 20.0072 13.8023 19.4316 14.4648 18.856C15.1272 18.2804 15.7245 17.7103 16.2567 17.1456C16.7888 16.5809 17.2069 16.027 17.511 15.484C17.8151 14.941 17.9671 14.4197 17.9671 13.9202C17.9671 13.5944 17.9074 13.2903 17.7879 13.0079C17.6685 12.7256 17.4784 12.4975 17.2178 12.3237C16.968 12.15 16.6314 12.0631 16.2078 12.0631C15.7951 12.0631 15.4422 12.1554 15.149 12.34C14.8666 12.5246 14.6548 12.7744 14.5137 13.0894C14.3725 13.3934 14.3019 13.741 14.3019 14.1319H12.4122C12.434 13.3066 12.6132 12.617 12.9498 12.0631C13.2865 11.5092 13.7426 11.0966 14.3182 10.8251C14.8938 10.5427 15.5399 10.4015 16.2567 10.4015C17.0277 10.4015 17.6848 10.5427 18.2278 10.8251C18.7708 11.1074 19.1889 11.5038 19.4821 12.0142C19.7753 12.5246 19.9219 13.1274 19.9219 13.8224C19.9219 14.3328 19.8242 14.8378 19.6287 15.3374C19.4441 15.8261 19.1835 16.3039 18.8468 16.7709C18.5101 17.227 18.13 17.6723 17.7065 18.1067C17.2938 18.5302 16.8648 18.9375 16.4196 19.3284C15.9743 19.7085 15.5454 20.0615 15.1327 20.3873H20.2314V22H12.3797Z" fill="white" />
                     <defs>
                       <linearGradient id="paint0_linear_radar" x1="0" y1="16.5" x2="33" y2="16.5" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#CDC4EC" />
-                        <stop offset="0.35" stop-color="#AE78F4" />
-                        <stop offset="0.65" stop-color="#545096" />
-                        <stop offset="1" stop-color="#303579" />
+                        <stop stop-color="#FFCF6E" />
+                        <stop offset="0.35" stop-color="#F59E2B" />
+                        <stop offset="0.65" stop-color="#B86A00" />
+                        <stop offset="1" stop-color="#5A3000" />
                       </linearGradient>
                     </defs>
                   </svg>
-                  Radar de Produtos
+                  Contas conectadas
                 </>
               )}
               {step.id === 'animacoes' && (
@@ -557,14 +496,14 @@ export default function Features() {
                     <path d="M16.3544 22.1955C15.6159 22.1955 14.9426 22.0652 14.3345 21.8045C13.7263 21.533 13.2376 21.1258 12.8684 20.5828C12.51 20.0289 12.3199 19.3339 12.2982 18.4976H14.2204C14.2313 18.8777 14.3182 19.2253 14.4811 19.5402C14.6548 19.8443 14.8992 20.0886 15.2141 20.2733C15.5291 20.447 15.9092 20.5339 16.3544 20.5339C16.778 20.5339 17.1363 20.4524 17.4296 20.2895C17.7336 20.1266 17.9617 19.904 18.1137 19.6217C18.2658 19.3393 18.3418 19.0244 18.3418 18.6768C18.3418 18.2533 18.2386 17.9058 18.0323 17.6343C17.826 17.3519 17.5436 17.1401 17.1852 16.999C16.8268 16.8578 16.4196 16.7872 15.9635 16.7872H15.1164V15.1745H15.9635C16.5608 15.1745 17.0495 15.0387 17.4296 14.7672C17.8097 14.4849 17.9997 14.0776 17.9997 13.5455C17.9997 13.1002 17.8531 12.7418 17.5599 12.4703C17.2775 12.1988 16.8703 12.0631 16.3381 12.0631C15.7843 12.0631 15.3444 12.226 15.0186 12.5518C14.7037 12.8776 14.5299 13.2794 14.4974 13.7573H12.5751C12.6077 13.0731 12.7815 12.4812 13.0964 11.9816C13.4222 11.4712 13.8621 11.0803 14.4159 10.8088C14.9698 10.5373 15.6159 10.4015 16.3544 10.4015C17.1255 10.4015 17.7771 10.5373 18.3092 10.8088C18.8414 11.0803 19.2432 11.4441 19.5147 11.9002C19.797 12.3563 19.9382 12.8559 19.9382 13.3989C19.9382 13.8224 19.8568 14.2079 19.6939 14.5555C19.531 14.903 19.3083 15.1962 19.026 15.4351C18.7545 15.6632 18.4341 15.8315 18.0649 15.9401C18.4884 16.027 18.8631 16.1953 19.1889 16.4451C19.5255 16.6949 19.7862 17.0153 19.9708 17.4062C20.1663 17.7863 20.264 18.2316 20.264 18.742C20.264 19.361 20.112 19.9366 19.8079 20.4687C19.5147 20.99 19.0749 21.4081 18.4884 21.7231C17.9128 22.038 17.2015 22.1955 16.3544 22.1955Z" fill="white" />
                     <defs>
                       <linearGradient id="paint0_linear_prompts" x1="0" y1="16.5" x2="33" y2="16.5" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#CDC4EC" />
-                        <stop offset="0.35" stop-color="#AE78F4" />
-                        <stop offset="0.65" stop-color="#545096" />
-                        <stop offset="1" stop-color="#303579" />
+                        <stop stop-color="#FFCF6E" />
+                        <stop offset="0.35" stop-color="#F59E2B" />
+                        <stop offset="0.65" stop-color="#B86A00" />
+                        <stop offset="1" stop-color="#5A3000" />
                       </linearGradient>
                     </defs>
                   </svg>
-                  Animações
+                  Publicação integrada
                 </>
               )}
               {step.id === 'revealy-boost' && (
@@ -574,14 +513,14 @@ export default function Features() {
                     <path d="M17.3531 22V19.8334H11.7005V18.2696L17.0762 10.597H19.2916V18.123H20.8392V19.8334H19.2916V22H17.3531ZM13.8019 18.123H17.4671V12.7473L13.8019 18.123Z" fill="white" />
                     <defs>
                       <linearGradient id="paint0_linear_boost" x1="0" y1="16.5" x2="33" y2="16.5" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#CDC4EC" />
-                        <stop offset="0.35" stop-color="#AE78F4" />
-                        <stop offset="0.65" stop-color="#545096" />
-                        <stop offset="1" stop-color="#303579" />
+                        <stop stop-color="#FFCF6E" />
+                        <stop offset="0.35" stop-color="#F59E2B" />
+                        <stop offset="0.65" stop-color="#B86A00" />
+                        <stop offset="1" stop-color="#5A3000" />
                       </linearGradient>
                     </defs>
                   </svg>
-                  Revealy Boost
+                  Gestão de anúncios
                 </>
               )}
             </button>
@@ -590,7 +529,7 @@ export default function Features() {
 
         <div
           className="sales-ticker left-1/2 mt-20 w-screen -translate-x-1/2 sm:mt-24"
-          aria-label="Venda sem aparecer"
+          aria-label="Venda sem ter estoque"
         >
           <div className="sales-ticker__track">
             {[0, 1].map((group) => (
@@ -601,7 +540,7 @@ export default function Features() {
               >
                 {Array.from({ length: 6 }).map((_, index) => (
                   <span key={index} className="sales-ticker__item">
-                    <span>Venda sem aparecer</span>
+                    <span>Venda sem ter estoque</span>
                     <span className="sales-ticker__dot">•</span>
                   </span>
                 ))}
@@ -611,87 +550,63 @@ export default function Features() {
         </div>
 
         <div className="mx-auto mt-24 max-w-6xl text-center sm:mt-28">
-          <p className="font-articulat text-xs font-semibold uppercase tracking-[0.28em] text-[#AC87FD]">
-            O mercado já explodiu
-          </p>
-          <h2 className="mx-auto mt-4 max-w-3xl font-articulat text-3xl font-semibold leading-tight text-white sm:text-4xl md:text-5xl">
-            Os prompts <span className="text-[#AC87FD]">secretos</span> que estão
-            <br className="hidden sm:block" /> <em className="font-normal">Viralizando No TikTok.</em>
-          </h2>
-
-          <p className="mx-auto mt-4 max-w-3xl font-articulat text-base leading-relaxed text-white/65 sm:text-lg">
-            Biblioteca privada de prompts UGC testados e prontos para colar. Cada movimento você vê aqui primeiro — é o que os alunos usam para gerar vídeos hiper-realistas que enganam a plataforma e explodem no For You.
-          </p>
-
-          <div className="relative mx-auto mt-12 overflow-hidden rounded-2xl">
-            <div className="absolute left-0 top-0 bottom-0 z-10 w-16 bg-gradient-to-r from-[#050208] to-transparent sm:w-24" />
-            <div className="absolute right-0 top-0 bottom-0 z-10 w-16 bg-gradient-to-l from-[#050208] to-transparent sm:w-24" />
-
-            <div className="flex w-max gap-3 animate-marquee sm:gap-4">
-              {[...videos, ...videos].map((video, index) => (
-                <LazyVideo key={index} src={video.src} poster={video.poster} />
-              ))}
-            </div>
-          </div>
-
-          <div className="arsenal-section mx-auto mt-28 max-w-5xl">
-            <p className="font-articulat text-xs font-semibold uppercase tracking-[0.22em] text-[#AC87FD]">
-              Seu arsenal completo
+          <div className="arsenal-section mx-auto max-w-6xl">
+            <p className="font-articulat text-xs font-semibold uppercase tracking-[0.42em] text-[#F59E2B]">
+              Dropealy
             </p>
-            <h3 className="mx-auto mt-3 max-w-2xl font-articulat text-3xl font-semibold leading-tight text-white sm:text-4xl">
-              Tudo o que você precisa para<br className="hidden sm:block" /> começar já está incluso
+            <h3 className="mx-auto mt-3 max-w-3xl font-articulat text-3xl font-bold leading-[1.05] text-white sm:text-4xl md:text-5xl">
+              Sua operação começa com<br className="hidden sm:block" /> <span className="text-[#F6B844]">as ferramentas certas</span>
             </h3>
-            <p className="mx-auto mt-4 max-w-2xl font-articulat text-sm leading-relaxed text-white/55 sm:text-base">
-              Ao garantir seu acesso, você recebe todas as ferramentas abaixo sem pagar nada à parte: prompts, IA, saldo para gerar vídeos e editor profissional.
+            <p className="mx-auto mt-4 max-w-2xl font-articulat text-sm leading-relaxed text-white/70 sm:text-lg">
+              Catálogo, publicação e acompanhamento em um só lugar.
             </p>
 
             <div className="mt-10 space-y-4 text-left">
               <article className="arsenal-card arsenal-card--blue">
-                <img className="arsenal-thumb" src="/assets/prompts-virais.png" alt="Biblioteca com mais de 500 prompts virais" />
+                <img className="arsenal-thumb" src="/assets/catalogo-produtos.png" alt="Catálogo de produtos da Dropealy" />
                 <div>
-                  <h4>+ de 500 Prompts Virais</h4>
-                  <p>Prompts de movimentos prontos para copiar e colar e criar vídeos ultra-realistas, com gestos, expressões e movimentos humanizados.</p>
+                  <h4>Catálogo de produtos</h4>
+                  <p>Consulte fotos, descrições, preços e estoque para escolher o que anunciar.</p>
                 </div>
               </article>
               <article className="arsenal-card arsenal-card--purple">
-                <img className="arsenal-thumb" src="/assets/revealy-influencers.png" alt="Revealy IA para criação de influencers" />
+                <img className="arsenal-thumb" src="/assets/publicacao-gestao.png" alt="Publicação e gestão de anúncios na Dropealy" />
                 <div>
-                  <h4>Revealy IA</h4>
-                  <p>A inteligência artificial completa para criar influenciadoras UGC hiper-realistas, trocar identidades e roupas, clonar movimentos e montar workflows em um só lugar.</p>
+                  <h4>Publicação e gestão de anúncios</h4>
+                  <p>Prepare seus anúncios no Mercado Livre e acompanhe status, qualidade e tarifas estimadas.</p>
                 </div>
               </article>
               <article className="arsenal-card arsenal-card--pink">
-                <img className="arsenal-thumb" src="/assets/flow-1k.jpg" alt="Conta Flow VEO3 com 1.050 créditos" />
+                <img className="arsenal-thumb arsenal-thumb--wide-fit" src="/assets/flow-1k-creditos.png" alt="Flow com 1.000 créditos" />
                 <div>
-                  <h4>Flow com 1K de saldo</h4>
-                  <p>Você recebe uma conta Flow com 1.000 créditos para transformar suas ideias em vídeos profissionais e começar a produzir desde o primeiro dia.</p>
+                  <span className="arsenal-bonus"><GiftIcon /><b>Bônus do plano vitalício</b></span>
+                  <h4>Flow com 1.000 créditos</h4>
+                  <p>Transforme ideias em vídeos para divulgar seus produtos.</p>
                 </div>
               </article>
               <article className="arsenal-card arsenal-card--gray">
-                <img className="arsenal-thumb" src="/assets/capcut-pro.jpg" alt="Acesso ao CapCut Pro" />
+                <img className="arsenal-thumb arsenal-thumb--wide-fit" src="/assets/capcut-pro-dropealy.png" alt="Acesso ao CapCut Pro" />
                 <div>
+                  <span className="arsenal-bonus"><GiftIcon /><b>Bônus do plano vitalício</b></span>
                   <h4>CapCut Pro</h4>
-                  <p>Editor profissional completo para finalizar seus vídeos, adicionar legendas, efeitos, áudio e deixar cada conteúdo pronto para vender no TikTok Shop.</p>
+                  <p>Edite vídeos, adicione legendas e prepare seus conteúdos de divulgação.</p>
                 </div>
               </article>
               <div className="arsenal-anchor">
-                <div className="text-left">
-                  <span>Valor real de tudo isso</span>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-1">
-                    <strong>R$ 7.633,80</strong>
-                    <b>hoje sai por uma fração</b>
-                  </div>
+                <div className="arsenal-anchor__message">
+                  <span className="arsenal-anchor__icon"><CrownIcon /></span>
+                  <b>Escolha o plano <em>para sua operação</em></b>
                 </div>
                 <a href="#planos" className="arsenal-cta">
-                  Quero garantir minha vaga <span>→</span>
+                  Conhecer os planos <span>→</span>
                 </a>
               </div>
             </div>
           </div>
 
-          <div className="relative mx-auto mt-28 max-w-3xl text-center">
+          <div className="relative mx-auto mt-28 max-w-[1450px] text-center">
             <div
-              className="absolute top-0 z-0 hidden h-[933px] w-[933px] -translate-y-1/2 rounded-full bg-[#511490] opacity-60 blur-[150px] lg:block"
+              className="absolute top-0 z-0 hidden h-[933px] w-[933px] -translate-y-1/2 rounded-full bg-[#F59E2B] opacity-35 blur-[150px] lg:block"
               style={{ right: '-800px' }}
             />
             <h3 className="relative z-10 font-articulat text-3xl font-semibold leading-tight text-white sm:text-4xl md:text-5xl">
@@ -704,76 +619,83 @@ export default function Features() {
               Cancele quando quiser. Sem letras miúdas.
             </p>
 
-            <div className="mx-auto mt-8 flex flex-wrap items-center justify-center gap-4">
-              {showCouponInput ? (
-                <div className="flex w-full max-w-[535px] flex-col items-center gap-2 px-4 sm:px-0">
-                  <div className="flex w-full flex-col items-center gap-2 sm:flex-row">
-                    <input
-                      type="text"
-                      placeholder="Digite seu cupom"
-                      value={coupon}
-                      onChange={(e) => {
-                        setCoupon(e.target.value)
-                        setIsValidCoupon(false)
-                        setIsInvalidCoupon(false)
-                      }}
-                      className="h-[59px] w-full rounded-full border border-white/30 bg-black/30 px-6 text-sm text-white placeholder-white/50 backdrop-blur-sm focus:border-white/60 focus:outline-none sm:flex-1"
-                      autoFocus
-                    />
-                    <button
-                      onClick={applyCoupon}
-                      className="flex h-[59px] w-full items-center justify-center rounded-full border text-sm font-semibold tracking-wide text-white transition hover:brightness-110 sm:w-[166px]"
-                      style={{
-                        backgroundColor: '#AB7AFF',
-                        borderColor: '#3b2c55',
-                        background:
-                          'linear-gradient(90deg, #AB7AFF 0%, #C19DFF 50%, #AB7AFF 100%)',
-                      }}
-                    >
-                      APLICAR
-                    </button>
+            <div id="planos" className="pricing-grid">
+              <article className="pricing-card">
+                <p className="pricing-card__label">Plano Starter</p>
+                <h4 className="pricing-card__title-lines">
+                  <span>Ideal para começar</span>
+                  <span>a vender</span>
+                </h4>
+                <div className="pricing-card__price"><strong>R$ 197</strong><span>/mês</span></div>
+                <ul>
+                  <li>Acesso mensal à plataforma</li>
+                  <li>Conecte 1 conta do Mercado Livre</li>
+                  <li>Conecte 1 conta da Shopee</li>
+                  <li>Acesso aos fornecedores Shopee e Mercado Livre</li>
+                  <li>Não inclui integração com Amazon</li>
+                </ul>
+                <a href="https://checkout.perfectpay.com.br/pay/PPU38CQGGMG?" target="_blank" rel="noopener noreferrer">Quero começar agora</a>
+              </article>
+
+              <article className="pricing-card pricing-card--featured">
+                <div className="pricing-card__recommended">Recomendado</div>
+                <p className="pricing-card__label">Plano Master</p>
+                <h4 className="pricing-card__title-lines">
+                  <span>Pague uma vez,</span>
+                  <span>use para sempre</span>
+                </h4>
+                <div className="pricing-card__price pricing-card__price--master"><span>12x de</span><strong>R$ 69,98</strong></div>
+                <p className="pricing-card__detail">ou R$ 697 à vista&nbsp; • &nbsp;Acesso vitalício</p>
+                <ul>
+                  <li>Acesso vitalício à plataforma</li>
+                  <li>Conecte 6 contas do Mercado Livre</li>
+                  <li>Conecte 6 contas da Shopee</li>
+                  <li>Conecte 6 contas da Amazon</li>
+                  <li>Acesso aos fornecedores Amazon, Shopee e Mercado Livre com envio mais rápido</li>
+                </ul>
+                <div className="master-bonus-box">
+                  <strong>Flow + CapCut Pro inclusos</strong>
+                  <p>No plano Master, você recebe os dois acessos sem cobranças separadas.</p>
+                  <div className="master-bonus-box__item">
+                    <img src="/assets/check-icon.svg" alt="" aria-hidden="true" />
+                    <span>Flow Pro com 1K de saldo</span>
+                    <del>R$ 700,00</del>
                   </div>
-                  {isValidCoupon && (
-                    <div className="coupon-gift-card text-left">
-                      <div className="coupon-gift-icon" aria-hidden="true">
-                        <svg width="25" height="25" viewBox="0 0 24 24" fill="none">
-                          <path d="M20 12v9H4v-9M2 7h20v5H2V7ZM12 7v14M12 7H7.5A2.5 2.5 0 1 1 10 4.5L12 7Zm0 0h4.5A2.5 2.5 0 1 0 14 4.5L12 7Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
-                      <div>
-                        <span>Cupom presente aplicado</span>
-                        <strong>{coupon}</strong>
-                        <p>Este é um Cupom Presente Revealy. Quem compartilhou este código <b>abriu mão da própria comissão</b> para liberar um benefício especial para você.</p>
-                      </div>
-                    </div>
-                  )}
-                  {isInvalidCoupon && (
-                    <p className="text-sm font-semibold text-red-400">Cupom inválido</p>
-                  )}
+                  <div className="master-bonus-box__item">
+                    <img src="/assets/check-icon.svg" alt="" aria-hidden="true" />
+                    <span>CapCut Pro</span>
+                    <del>R$ 244,90</del>
+                  </div>
+                  <small>Economia total de R$ 944,90 com os dois bônus inclusos.</small>
                 </div>
-              ) : (
-                <button
-                  onClick={() => setShowCouponInput(true)}
-                  className="flex h-[59px] w-[535px] items-center justify-center rounded-full border text-sm font-semibold tracking-wide text-white transition hover:brightness-110"
-                  style={{
-                    backgroundColor: '#AB7AFF',
-                    borderColor: '#3b2c55',
-                    background:
-                      'linear-gradient(90deg, #AB7AFF 0%, #C19DFF 50%, #AB7AFF 100%)',
-                  }}
-                >
-                  TEM UM CUPOM OU INDICAÇÃO?
-                </button>
-              )}
+                <a href="https://checkout.perfectpay.com.br/pay/PPU38CQGGNH?" target="_blank" rel="noopener noreferrer">Quero começar agora</a>
+              </article>
+
+              <article className="pricing-card">
+                <p className="pricing-card__label">Plano Trial</p>
+                <h4 className="pricing-card__title-lines">
+                  <span>Mais contas para</span>
+                  <span>ampliar suas vendas</span>
+                </h4>
+                <div className="pricing-card__price"><strong>R$ 297</strong><span>/3 meses</span></div>
+                <ul>
+                  <li>Acesso trimestral à plataforma</li>
+                  <li>Conecte 3 contas do Mercado Livre</li>
+                  <li>Conecte 3 contas da Shopee</li>
+                  <li>Conecte 3 contas da Amazon</li>
+                  <li>Acesso aos fornecedores Amazon, Shopee e Mercado Livre</li>
+                </ul>
+                <a href="https://checkout.perfectpay.com.br/pay/PPU38CQGI6H?" target="_blank" rel="noopener noreferrer">Quero começar agora</a>
+              </article>
             </div>
 
-            <div id="planos" className="relative mx-auto mt-16 flex flex-col items-center justify-center gap-8 lg:flex-row lg:items-stretch">
+            <div className="hidden">
               <div
-                className="absolute top-1/2 z-0 hidden h-[933px] w-[933px] -translate-y-1/2 rounded-full bg-[#511490] opacity-60 blur-[150px] lg:block"
+                className="absolute top-1/2 z-0 hidden h-[933px] w-[933px] -translate-y-1/2 rounded-full bg-[#F59E2B] opacity-35 blur-[150px] lg:block"
                 style={{ left: '-800px' }}
               />
               <div
-                className="relative z-10 w-full max-w-[425px] rounded-[18px] border border-[rgba(171,122,255,0.25)] px-6 py-8 backdrop-blur-[14px] sm:px-[37px] sm:py-[47px]"
+                className="relative z-10 w-full max-w-[425px] rounded-[18px] border border-[rgba(245,158,43,0.62)] px-6 py-8 backdrop-blur-[14px] sm:px-[37px] sm:py-[47px]"
                 style={{ backdropFilter: 'blur(14.25px)', minHeight: '845px', background: 'rgba(80, 80, 80, 0.2)' }}
               >
                 <div className="border-b border-[rgba(248,247,243,0.25)] pb-[19px] text-left">
@@ -786,10 +708,10 @@ export default function Features() {
                 </div>
 
                 <div className="mt-[22px] flex items-center">
-                  <p className={`font-albert text-[36px] font-semibold leading-[0.76] tracking-normal ${isValidCoupon ? 'text-[#AB7AFF]' : 'text-white'}`}>
-                    R${getPrice('Mensal')}
+                  <p className="font-albert text-[36px] font-semibold leading-[0.76] tracking-normal text-white">
+                    R$375
                   </p>
-                  <p className={`font-albert text-[16px] font-normal leading-[0.76] tracking-normal ${isValidCoupon ? 'text-[#AB7AFF]' : 'text-white'}`}>
+                  <p className="font-albert text-[16px] font-normal leading-[0.76] tracking-normal text-white">
                     /por mês
                   </p>
                   <p className="font-albert text-[28px] font-semibold leading-[0.76] tracking-normal text-white">
@@ -927,8 +849,14 @@ export default function Features() {
               </div>
 
               <div
-                className={`relative z-10 w-full max-w-[425px] rounded-[18px] border px-6 py-8 backdrop-blur-[14px] sm:px-[37px] sm:py-[47px] ${isValidCoupon ? 'coupon-vitalicio-glow' : ''}`}
-                style={{ backdropFilter: 'blur(14.25px)', minHeight: '845px', borderColor: 'rgba(171, 122, 255, 0.57)', background: 'rgba(67, 0, 112, 0.2)' }}
+                className="relative z-10 w-full max-w-[425px] rounded-[18px] border px-6 py-8 backdrop-blur-[14px] sm:px-[37px] sm:py-[47px]"
+                style={{
+                  backdropFilter: 'blur(14.25px)',
+                  minHeight: '845px',
+                  borderColor: 'rgba(245, 158, 43, 0.72)',
+                  background: 'radial-gradient(circle at 50% 18%, rgba(255, 207, 110, 0.18), transparent 52%), rgba(35, 22, 5, 0.32)',
+                  boxShadow: 'inset 0 0 42px rgba(245, 158, 43, 0.13), 0 0 28px rgba(245, 158, 43, 0.12)',
+                }}
               >
                 <div
                   className="absolute left-1/2 top-[-25px] z-20 -translate-x-1/2"
@@ -936,13 +864,13 @@ export default function Features() {
                   <div
                     className="flex h-[50px] w-[207px] items-center justify-center rounded-full border"
                     style={{
-                      borderColor: '#3b2c55',
+                      borderColor: '#FFCF6E',
                       background:
-                        'linear-gradient(90deg, #AB7AFF 0%, #C19DFF 50%, #AB7AFF 100%)',
-                      boxShadow: '-6px 4px 66.9px rgba(201, 170, 255, 0.7)',
+                        'linear-gradient(135deg, #FFCF6E, #F59E2B)',
+                      boxShadow: '0 4px 66.9px rgba(245, 158, 43, 0.72)',
                     }}
                   >
-                    <p className="font-articulat text-sm font-semibold text-white">
+                    <p className="font-articulat text-sm font-semibold text-black">
                       Recomendado
                     </p>
                   </div>
@@ -960,26 +888,14 @@ export default function Features() {
                 </div>
 
                 <div className="mt-[22px] flex flex-col gap-[4px] text-left">
-                  {isValidCoupon ? (
-                    <>
-                      <p className="font-albert text-[36px] font-semibold leading-[0.76] tracking-normal text-[#AB7AFF]">
-                        <span className="text-[20px]">12x de</span> R$ 29,82
-                      </p>
-                      <p className="font-albert flex flex-wrap items-center gap-2 text-[16px] font-normal leading-none tracking-normal text-white">
-                        <span>ou R$ 297 vitalício</span>
-                        <span className="font-semibold text-red-500 line-through decoration-red-500 decoration-2">R$ 695</span>
-                      </p>
-                    </>
-                  ) : (
-                    <div className="flex items-center">
-                      <p className="font-albert text-[36px] font-semibold leading-[0.76] tracking-normal text-white">
-                        R$ 695
-                      </p>
-                      <p className="font-albert text-[16px] font-normal leading-[0.76] tracking-normal text-white">
-                        /vitalicio
-                      </p>
-                    </div>
-                  )}
+                  <div className="flex items-center">
+                    <p className="font-albert text-[36px] font-semibold leading-[0.76] tracking-normal text-white">
+                      R$ 695
+                    </p>
+                    <p className="font-albert text-[16px] font-normal leading-[0.76] tracking-normal text-white">
+                      /vitalicio
+                    </p>
+                  </div>
                 </div>
 
                 <div className="mt-[22px] flex flex-col gap-[4px]">
@@ -1055,7 +971,7 @@ export default function Features() {
                       Comunidade Exclusiva
                     </p>
                   </div>
-                  <div className="flex h-[48px] items-center gap-[21px] border-b" style={{ borderColor: '#AB7AFF' }}>
+                  <div className="flex h-[48px] items-center gap-[21px] border-b" style={{ borderColor: '#F59E2B' }}>
                     <div className="h-[13px] w-[13px]">
                       <img
                         src="/assets/check-icon.svg"
@@ -1063,11 +979,11 @@ export default function Features() {
                         className="h-full w-full"
                       />
                     </div>
-                    <p className="font-articulat text-[13px] font-light leading-[1.2]" style={{ color: '#AB7AFF' }}>
+                    <p className="font-articulat text-[13px] font-light leading-[1.2]" style={{ color: '#F59E2B' }}>
                       Treinamento personalizado
                     </p>
                   </div>
-                  <div className="flex h-[48px] items-center gap-[21px] border-b" style={{ borderColor: '#AB7AFF' }}>
+                  <div className="flex h-[48px] items-center gap-[21px] border-b" style={{ borderColor: '#F59E2B' }}>
                     <div className="h-[13px] w-[13px]">
                       <img
                         src="/assets/check-icon.svg"
@@ -1075,11 +991,11 @@ export default function Features() {
                         className="h-full w-full"
                       />
                     </div>
-                    <p className="font-articulat text-[13px] font-light leading-[1.2]" style={{ color: '#AB7AFF' }}>
+                    <p className="font-articulat text-[13px] font-light leading-[1.2]" style={{ color: '#F59E2B' }}>
                       Indique e ganhe
                     </p>
                   </div>
-                  <div className="flex h-[48px] items-center gap-[21px] border-b" style={{ borderColor: '#AB7AFF' }}>
+                  <div className="flex h-[48px] items-center gap-[21px] border-b" style={{ borderColor: '#F59E2B' }}>
                     <div className="h-[13px] w-[13px]">
                       <img
                         src="/assets/check-icon.svg"
@@ -1087,25 +1003,11 @@ export default function Features() {
                         className="h-full w-full"
                       />
                     </div>
-                    <p className="font-articulat text-[13px] font-light leading-[1.2]" style={{ color: '#AB7AFF' }}>
+                    <p className="font-articulat text-[13px] font-light leading-[1.2]" style={{ color: '#F59E2B' }}>
                       Bonus exclusivo
                     </p>
                   </div>
                 </div>
-
-                {isValidCoupon && (
-                  <div className="vitalicio-bonus mt-5 text-left">
-                    <span>Flow + CapCut Pro inclusos</span>
-                    <p>A Revealy usa parte dos R$297 do acesso vitalício para entregar esses dois acessos. Não há cobranças separadas.</p>
-                    <div>
-                      <img src="/assets/check-icon.svg" alt="" aria-hidden="true" /> Conta privada Flow Pro 1K saldo <del>R$700,00</del>
-                    </div>
-                    <div>
-                      <img src="/assets/check-icon.svg" alt="" aria-hidden="true" /> CapCut Pro <del>R$244,90</del>
-                    </div>
-                    <small>Economia total de R$944,90 adquirindo acesso vitalício com CapCut Pro e Google Flow Pro.</small>
-                  </div>
-                )}
 
                 <div className="mt-[22px] h-0 w-[297px]">
                   <div className="h-0 w-[297px] border-b border-white/20" />
@@ -1117,9 +1019,9 @@ export default function Features() {
                   rel="noopener noreferrer"
                   className="relative mx-auto mt-[22px] flex h-[52px] w-[247px] items-center justify-center rounded-[82px] border transition hover:brightness-110"
                   style={{
-                    borderColor: '#3b2c55',
+                    borderColor: '#FFCF6E',
                     background:
-                      'linear-gradient(90deg, #AB7AFF 0%, #C19DFF 50%, #AB7AFF 100%)',
+                      'linear-gradient(135deg, #FFCF6E, #F59E2B)',
                   }}
                 >
                   <div className="absolute left-[5px] top-1/2 h-[39px] w-[40px] -translate-y-1/2 overflow-hidden rounded-[39px] bg-white flex items-center justify-center">
@@ -1129,7 +1031,7 @@ export default function Features() {
                       <path d="M13.1016 19.6523H26.8807" stroke="black" stroke-width="1.22809" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </div>
-                  <p className="font-articulat text-[13px] font-medium text-white whitespace-nowrap">
+                  <p className="font-articulat text-[13px] font-semibold text-black whitespace-nowrap">
                     Quero começar agora
                   </p>
                 </a>
@@ -1160,24 +1062,24 @@ export default function Features() {
       </div>
 
       <section className="final-call mx-auto mt-28 w-[calc(100%-3rem)] max-w-[1050px] px-6 py-12 text-center sm:px-12 sm:py-16">
-        <p className="font-articulat text-xs font-semibold uppercase tracking-[0.25em] text-[#AC87FD]">
-          Última chamada
+        <p className="font-articulat text-xs font-bold uppercase tracking-[0.34em] text-[#F5A623]">
+          Seu próximo passo
         </p>
         <h2 className="mx-auto mt-4 max-w-4xl font-articulat text-3xl font-semibold leading-[1.08] text-white sm:text-4xl md:text-5xl">
-          Enquanto você adia, <em>outros criadores</em><br className="hidden md:block" /> já estão produzindo e vendendo com IA
+          Do catálogo ao anúncio,<br className="hidden sm:block" /> comece <em>sua operação</em> com a Dropealy.
         </h2>
-        <p className="mx-auto mt-5 max-w-3xl font-articulat text-sm leading-relaxed text-white/60 sm:text-base">
-          A Revealy reúne as ferramentas que você precisa para encontrar produtos, criar conteúdos com IA e transformar ideias em criativos prontos para vender.
+        <p className="mx-auto mt-5 max-w-3xl font-articulat text-sm leading-relaxed text-white/65 sm:text-base">
+          Encontre produtos, prepare seus anúncios e acompanhe sua operação em um só lugar.
         </p>
         <ul className="mx-auto mt-7 max-w-2xl space-y-3 text-left">
           {[
-            'Encontre produtos com potencial no Radar de Produtos',
-            'Crie influencers e avatares virtuais consistentes',
-            'Gere roteiros e prompts com agentes GPT especializados',
-            'Produza imagens, animações e criativos UGC com IA',
-            'Aprenda estratégias para postar, fazer lives e vender mais',
+            'Explore o catálogo com fotos, preços e informações dos produtos',
+            'Conecte sua conta do Mercado Livre',
+            'Prepare e publique seus anúncios pela plataforma',
+            'Acompanhe status, qualidade e tarifas estimadas',
+            'Crie conteúdos com CapCut Pro e Flow no Plano Vitalício',
           ].map((item) => (
-            <li key={item} className="flex items-start gap-3 font-articulat text-sm text-white/85 sm:text-base">
+            <li key={item} className="flex items-center gap-3 font-articulat text-sm text-white/85 sm:text-base">
               <span className="final-call__check">✓</span>
               <span>{item}</span>
             </li>
@@ -1191,10 +1093,10 @@ export default function Features() {
               <path d="M13.1016 19.6523H26.8807" stroke="black" strokeWidth="1.22809" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          Começar agora na Revealy
+          Começar agora na Dropealy
         </a>
-        <p className="mt-4 font-articulat text-xs text-white/40">
-          Pesquise, crie e publique com um processo mais simples.
+        <p className="mt-5 font-articulat text-sm text-white/40">
+          Escolha seu plano e dê o próximo passo.
         </p>
       </section>
 
@@ -1214,7 +1116,7 @@ export default function Features() {
       </div>
 
       <div className="relative mx-auto mt-12 flex w-full flex-col gap-4 px-6">
-        <div className="absolute left-1/2 top-1/2 z-0 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#511490] opacity-60 blur-[120px] sm:h-[513px] sm:w-[513px]" />
+        <div className="absolute left-1/2 top-1/2 z-0 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#F59E2B] opacity-35 blur-[120px] sm:h-[513px] sm:w-[513px]" />
         {faqs.map((faq, index) => (
           <div
             key={index}
@@ -1246,25 +1148,25 @@ export default function Features() {
 
       <div className="mx-auto mt-12 flex justify-center px-6">
         <img
-          src="/assets/Vector.png"
-          alt="Vector"
+          src="/assets/dropealy-zouti.png"
+          alt="Dropealy"
           className="h-auto w-full max-w-[1030.44px]"
         />
       </div>
     </section>
 
-    <footer className={`relative w-full overflow-hidden bg-[#090C11] px-6 py-16 ${isValidCoupon ? 'pb-28 sm:pb-24' : ''}`}>
+    <footer className="relative w-full overflow-hidden bg-[#090C11] px-6 py-16">
       <div className="absolute top-0 left-0 h-[1px] w-full bg-white/20" />
-      <div className="absolute left-0 top-0 h-[300px] w-[300px] rounded-full bg-[#AB7AFF] opacity-20 blur-[120px]" />
-      <div className="absolute -bottom-40 -left-40 h-[505px] w-[505px] bg-[#511490] opacity-100 blur-[150px]" />
+      <div className="absolute left-0 top-0 h-[300px] w-[300px] rounded-full bg-[#FFCF6E] opacity-20 blur-[120px]" />
+      <div className="absolute -bottom-40 -left-40 h-[505px] w-[505px] bg-[#F59E2B] opacity-45 blur-[150px]" />
 
       <div className="relative mx-auto max-w-6xl sm:min-h-[286px]">
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <img
-              src="/assets/logo-lp.png"
-              alt="Revealy"
-              className="h-[41px] w-[141px]"
+              src="/assets/dropealy-logo-horizontal.png"
+              alt="Dropealy"
+              className="h-[41px] w-auto max-w-[160px] object-contain"
             />
           </div>
 
@@ -1303,11 +1205,11 @@ export default function Features() {
             </ul>
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="mt-6 flex items-center gap-2 font-articulat text-sm font-semibold text-[#AB7AFF] hover:text-white"
+              className="mt-6 flex items-center gap-2 font-articulat text-sm font-semibold text-[#F59E2B] hover:text-[#FFCF6E]"
             >
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g clipPath="url(#clip0_1_163)">
-                  <rect width="15" height="15" rx="3.5919" fill="#AB7AFF" />
+                  <rect width="15" height="15" rx="3.5919" fill="#F59E2B" />
                 </g>
                 <defs>
                   <clipPath id="clip0_1_163">
@@ -1379,15 +1281,7 @@ export default function Features() {
       </div>
     </footer>
 
-    {isValidCoupon && (
-      <div className="coupon-countdown" role="status" aria-live="polite">
-        <span className="coupon-countdown__clock">◷</span>
-        <span>Seu cupom</span>
-        <strong>{coupon}</strong>
-        <span>expira em</span>
-        <b>{couponTimer}</b>
-      </div>
-    )}
   </>
   )
 }
+

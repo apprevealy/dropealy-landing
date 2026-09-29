@@ -1,9 +1,9 @@
 export default function Navbar() {
   return (
     <header className="absolute top-6 left-1/2 z-20 w-[92%] max-w-[717px] -translate-x-1/2">
-      <nav className="flex h-[77px] items-center justify-between rounded-full border border-white/30 bg-black/40 px-6 backdrop-blur-md shadow-[0_0_40px_rgba(147,51,234,0.25)]">
+      <nav className="flex h-[77px] items-center justify-between rounded-full border border-white/30 bg-black/40 px-6 backdrop-blur-md shadow-[0_0_40px_rgba(245,158,43,0.25)]">
         <div className="flex items-center gap-12">
-          <img src="/assets/logo-lp.png" alt="Revealy" className="h-[41px] w-[141px]" />
+          <img src="/assets/dropealy-logo-horizontal.png" alt="Dropealy" className="h-[41px] w-auto max-w-[160px] object-contain" />
 
           <div className="hidden items-center gap-[35px] text-sm font-medium text-white md:flex">
             <a href="#planos" className="transition hover:opacity-80">
@@ -17,7 +17,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-8">
           <a
-            href="https://new.apprevealy.com/login"
+            href="https://app.dropealy.com/login"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden items-center gap-1.5 text-sm leading-none text-white transition hover:opacity-80 sm:flex"
@@ -31,10 +31,10 @@ export default function Navbar() {
           </a>
           <a
             href="#planos"
-            className="flex h-[47px] w-[181px] items-center justify-center rounded-full text-sm font-medium text-white shadow-[0_0_20px_rgba(168,85,247,0.6)] transition hover:brightness-110"
+            className="flex h-[47px] w-[181px] items-center justify-center rounded-full text-sm font-semibold text-black shadow-[0_0_20px_rgba(245,158,43,0.6)] transition hover:brightness-110"
             style={{
               background:
-                'linear-gradient(90deg, #511490 0%, #AB7BFF 50%, #511490 97%)',
+                'linear-gradient(135deg, #FFCF6E, #F59E2B)',
             }}
           >
             Criar Conta

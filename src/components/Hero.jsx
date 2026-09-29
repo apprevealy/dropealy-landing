@@ -3,13 +3,13 @@ export default function Hero({ children }) {
   return (
     <section className="relative flex min-h-screen w-full items-end justify-center overflow-hidden bg-[#050208] pb-16 pt-28 sm:pb-20">
       <img
-        src="/assets/banner-lp.png"
-        alt="Revealy - grafite roxo em parede escura"
+        src="/assets/dropealy-banner-1920x1080.png"
+        alt="Dropealy - identidade visual dourada"
         className="absolute inset-0 hidden h-full w-full object-cover sm:block"
       />
       <img
-        src="/assets/nv ft.png"
-        alt="Revealy - mobile"
+        src="/assets/dropealy-hero-mobile-853x1844.png"
+        alt="Dropealy - mobile"
         className="absolute inset-0 block h-full w-full object-cover sm:hidden"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />
@@ -19,10 +19,10 @@ export default function Hero({ children }) {
       <div className="relative z-10 flex flex-col items-center gap-4 sm:flex-row">
         <a
           href="#planos"
-          className="flex h-[62px] w-[270px] items-center justify-center rounded-full text-sm font-semibold uppercase tracking-wide text-white shadow-[0_0_30px_rgba(168,85,247,0.7)] transition hover:brightness-110"
+          className="flex h-[62px] w-[270px] items-center justify-center rounded-full text-sm font-semibold uppercase tracking-wide text-black shadow-[0_0_30px_rgba(245,158,43,0.7)] transition hover:brightness-110"
           style={{
             background:
-              'linear-gradient(90deg, #511490 0%, #AB7BFF 50%, #511490 97%)',
+              'linear-gradient(135deg, #FFCF6E, #F59E2B)',
           }}
         >
           Escalar minhas vendas
