@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useCheckout, CheckoutStatus } from './CheckoutProvider'
 
 function GiftIcon() {
   return (
@@ -19,6 +20,7 @@ function CrownIcon() {
 }
 
 export default function Features() {
+  const getCheckoutProps = useCheckout()
   const [openIndex, setOpenIndex] = useState(-1)
   const [currentStep, setCurrentStep] = useState(0)
   const [deliveryCardIndex, setDeliveryCardIndex] = useState(0)
@@ -97,11 +99,6 @@ export default function Features() {
     setCurrentStep(index)
   }
 
-  const getCheckoutLink = (planName) => {
-    return planName === 'Mensal'
-      ? 'https://checkout.perfectpay.com.br/pay/PPU38CQDJIE'
-      : 'https://checkout.perfectpay.com.br/pay/PPU38CQDIQM'
-  }
 
   const faqs = [
     {
@@ -619,6 +616,7 @@ export default function Features() {
               Cancele quando quiser. Sem letras miúdas.
             </p>
 
+            <CheckoutStatus />
             <div id="planos" className="pricing-grid">
               <article className="pricing-card">
                 <p className="pricing-card__label">Plano Starter</p>
@@ -634,7 +632,7 @@ export default function Features() {
                   <li>Acesso aos fornecedores Shopee e Mercado Livre</li>
                   <li>Não inclui integração com Amazon</li>
                 </ul>
-                <a href="https://checkout.perfectpay.com.br/pay/PPU38CQGGMG?" target="_blank" rel="noopener noreferrer">Quero começar agora</a>
+                <a {...getCheckoutProps('starter', 'https://checkout.perfectpay.com.br/pay/PPU38CQGGMG?')} target="_blank" rel="noopener noreferrer">Quero começar agora</a>
               </article>
 
               <article className="pricing-card pricing-card--featured">
@@ -668,7 +666,7 @@ export default function Features() {
                   </div>
                   <small>Economia total de R$ 944,90 com os dois bônus inclusos.</small>
                 </div>
-                <a href="https://checkout.perfectpay.com.br/pay/PPU38CQGGNH?" target="_blank" rel="noopener noreferrer">Quero começar agora</a>
+                <a {...getCheckoutProps('master', 'https://checkout.perfectpay.com.br/pay/PPU38CQGGNH?')} target="_blank" rel="noopener noreferrer">Quero começar agora</a>
               </article>
 
               <article className="pricing-card">
@@ -685,7 +683,7 @@ export default function Features() {
                   <li>Conecte 3 contas da Amazon</li>
                   <li>Acesso aos fornecedores Amazon, Shopee e Mercado Livre</li>
                 </ul>
-                <a href="https://checkout.perfectpay.com.br/pay/PPU38CQGI6H?" target="_blank" rel="noopener noreferrer">Quero começar agora</a>
+                <a {...getCheckoutProps('trial', 'https://checkout.perfectpay.com.br/pay/PPU38CQGI6H?')} target="_blank" rel="noopener noreferrer">Quero começar agora</a>
               </article>
             </div>
 
@@ -811,7 +809,7 @@ export default function Features() {
                 </div>
 
                 <a
-                  href={getCheckoutLink('Mensal')}
+                  {...getCheckoutProps('starter', 'https://checkout.perfectpay.com.br/pay/PPU38CQDJIE')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="relative mx-auto mt-[22px] flex h-[52px] w-[247px] items-center justify-center rounded-[82px] bg-[#3d3d3d] transition hover:bg-[#4d4d4d]"
@@ -1014,7 +1012,7 @@ export default function Features() {
                 </div>
 
                 <a
-                  href={getCheckoutLink('Vitalicio')}
+                  {...getCheckoutProps('master', 'https://checkout.perfectpay.com.br/pay/PPU38CQDIQM')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="relative mx-auto mt-[22px] flex h-[52px] w-[247px] items-center justify-center rounded-[82px] border transition hover:brightness-110"

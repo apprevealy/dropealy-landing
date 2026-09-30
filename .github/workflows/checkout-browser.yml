@@ -1,0 +1,42 @@
+name: Validar checkouts em navegador sem tocar na produção
+on:
+  push:
+    branches: [integracao/checkouts-parceiros]
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  navegador_isolado:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Testes unitários e travas de produção
+        run: node --test tests/*.test.mjs
+      - name: Comparar HTML com o código original
+        run: node scripts/check-checkout-render.mjs
+      - name: Compilar a mesma aplicação testada na prévia
+        run: npm run build
+      - name: Instalar navegador apenas no ambiente de teste
+        run: |
+          npm install --no-save --package-lock=false playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Validar desktop e celular com parceiros simulados
+        run: node scripts/check-checkout-browser.mjs
+      - name: Garantir que código e dependências do projeto não foram alterados
+        run: git diff --exit-code -- src package.json package-lock.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evidencias-navegador-${{ github.run_id }}
+          path: checkout-browser-results/
+          retention-days: 7

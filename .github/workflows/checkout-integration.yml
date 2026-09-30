@@ -1,0 +1,37 @@
+name: Verificar integração de checkouts
+on:
+  push:
+    branches: [integracao/checkouts-parceiros]
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Testes unitários
+        run: node --test tests/*.test.mjs
+      - name: Conferir HTML e destinos dos cinco botões
+        run: node scripts/check-checkout-render.mjs
+      - name: Compilar o site
+        run: npm run build
+      - name: Garantir que os testes não modificaram o código
+        run: git diff --exit-code -- src
+      - name: Conferir API pública sem alterar dados
+        run: node scripts/probe-promo-api.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: checkout-verificado-${{ github.run_id }}
+          path: promo-api-check.json
+          retention-days: 7

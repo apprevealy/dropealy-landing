@@ -1,0 +1,38 @@
+name: Validar parceiro aprovado com API real
+on:
+  push:
+    branches: [integracao/checkouts-parceiros]
+    paths:
+      - scripts/check-published-partner.mjs
+      - .github/workflows/checkout-published.yml
+      - vercel.json
+permissions:
+  contents: read
+jobs:
+  parceiro_aprovado:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Instalar navegador somente no ambiente de testes
+        run: |
+          npm install --no-save --package-lock=false playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: API aprovada real, navegador e preservação do CSS
+        run: node scripts/check-published-partner.mjs
+      - name: Conferir que o teste não alterou a aplicação
+        run: git diff --exit-code -- src package.json package-lock.json vercel.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parceiro-publicado-${{ github.run_id }}
+          path: published-partner-results/
+          retention-days: 7
