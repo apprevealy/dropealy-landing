@@ -2,8 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "installCommand": "npm install",
-  "ignoreCommand": "[ \"$VERCEL_ENV\" != \"preview\" ]",
-  "buildCommand": "node -e \"if(process.env.VERCEL_ENV!=='preview'){console.error('Validacao isolada: publicacao de producao bloqueada nesta branch.');process.exit(1)}\" && npm run build",
+  "ignoreCommand": "if [ \"$VERCEL_ENV\" = \"preview\" ] || { [ \"$VERCEL_ENV\" = \"production\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" = \"master\" ]; }; then exit 1; else exit 0; fi",
+  "buildCommand": "node -e \"const e=process.env;if(e.VERCEL_ENV!=='preview'&&!(e.VERCEL_ENV==='production'&&e.VERCEL_GIT_COMMIT_REF==='master')){console.error('Publicacao permitida somente em previa ou na branch master de producao.');process.exit(1)}\" && npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "rewrites": [
