@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { GraduationCap, Sparkles } from 'lucide-react'
 import { useCheckout, CheckoutStatus } from './CheckoutProvider'
+import { COMMERCIAL_PLANS, commercialPrice, MASTER_INSTALLMENT_TOTAL_CENTS } from '../lib/commercialPlans.mjs'
 
 function GiftIcon() {
   return (
@@ -102,12 +104,12 @@ export default function Features() {
 
   const faqs = [
     {
-      question: 'O que é a Revealy?',
+      question: 'O que é a Dropealy e quais integrações cada plano inclui?',
       answer: (
         <span className="text-left">
-          A Revealy é uma plataforma de tecnologia avançada que utiliza Inteligência Artificial para automatizar e escalar a sua operação de vendas digitais. Ela permite que você crie Avatares UGC (User Generated Content) hiper-realistas e produza vídeos em massa para vender produtos sem precisar aparecer ou contratar influenciadores.
+          A Dropealy reúne catálogo, publicação e gestão de anúncios para sua operação nos marketplaces.
           <br />
-          Muito além de um gerador de vídeos, a Revealy é um ecossistema completo para contingência e escala de conteúdo. Ela possui integração direta com os maiores marketplaces do mercado (como TikTok Shop, Amazon, Shopee, Mercado Livre, Shein e AliExpress) e conta com ferramentas exclusivas como o Radar de Produtos (para mineração de tendências a cada 6 horas) e o Revealy Boost (para ganho seguro e acelerado de seguidores orgânicos). É a solução definitiva para quem quer dominar as vendas em lote no piloto automático.
+          O mensal inclui integração somente com Mercado Livre; Shopee e Amazon ficam bloqueadas. O trimestral e o vitalício incluem as três integrações, respeitando a disponibilidade de cada marketplace.
         </span>
       ),
     },
@@ -131,7 +133,15 @@ export default function Features() {
       question: 'Eu recebo algum modelo ou treinamento para começar?',
       answer: (
         <span className="text-left">
-          Sim! Ao se tornar um membro, você ganha acesso ao nosso painel exclusivo de orientações e ao nosso modelo oficial de slides no Canva para estruturar suas apresentações de lives e vídeos de alta conversão de forma simples e rápida.
+          O trimestral inclui a área de membros exclusiva com aulas. No vitalício, os bônus são a área de membros com aulas, Gemini Plus e CapCut Pro. O mensal não inclui esses bônus.
+        </span>
+      ),
+    },
+    {
+      question: 'Quanto custa cada plano?',
+      answer: (
+        <span className="text-left">
+          Mensal: {commercialPrice(COMMERCIAL_PLANS.starter.priceCents)}. Trimestral: {commercialPrice(COMMERCIAL_PLANS.trial.priceCents)} por 3 meses. Vitalício: {commercialPrice(COMMERCIAL_PLANS.master.priceCents)} à vista ou {COMMERCIAL_PLANS.master.installmentCount}x de {commercialPrice(COMMERCIAL_PLANS.master.installmentCents)}, total de {commercialPrice(MASTER_INSTALLMENT_TOTAL_CENTS)} no parcelamento.
         </span>
       ),
     },
@@ -574,11 +584,19 @@ export default function Features() {
                 </div>
               </article>
               <article className="arsenal-card arsenal-card--pink">
-                <img className="arsenal-thumb arsenal-thumb--wide-fit" src="/assets/flow-1k-creditos.png" alt="Flow com 1.000 créditos" />
+                <div className="arsenal-thumb arsenal-thumb--bonus-art" aria-hidden="true"><GraduationCap /></div>
+                <div>
+                  <span className="arsenal-bonus"><GiftIcon /><b>Bônus do trimestral e vitalício</b></span>
+                  <h4>Área de membros exclusiva com aulas</h4>
+                  <p>Aprenda a usar a ferramenta e colocar sua operação em prática.</p>
+                </div>
+              </article>
+              <article className="arsenal-card arsenal-card--pink">
+                <div className="arsenal-thumb arsenal-thumb--bonus-art" aria-hidden="true"><Sparkles /></div>
                 <div>
                   <span className="arsenal-bonus"><GiftIcon /><b>Bônus do plano vitalício</b></span>
-                  <h4>Flow com 1.000 créditos</h4>
-                  <p>Transforme ideias em vídeos para divulgar seus produtos.</p>
+                  <h4>Gemini Plus</h4>
+                  <p>Conte com inteligência artificial para apoiar suas ideias e conteúdos.</p>
                 </div>
               </article>
               <article className="arsenal-card arsenal-card--gray">
@@ -624,13 +642,9 @@ export default function Features() {
                   <span>Ideal para começar</span>
                   <span>a vender</span>
                 </h4>
-                <div className="pricing-card__price"><strong>R$ 197</strong><span>/mês</span></div>
+                <div className="pricing-card__price"><strong>{commercialPrice(COMMERCIAL_PLANS.starter.priceCents)}</strong><span>/mês</span></div>
                 <ul>
-                  <li>Acesso mensal à plataforma</li>
-                  <li>Conecte 1 conta do Mercado Livre</li>
-                  <li>Conecte 1 conta da Shopee</li>
-                  <li>Acesso aos fornecedores Shopee e Mercado Livre</li>
-                  <li>Não inclui integração com Amazon</li>
+                  {COMMERCIAL_PLANS.starter.features.map((feature) => <li key={feature}>{feature}</li>)}
                 </ul>
                 <a {...getCheckoutProps('starter', 'https://checkout.perfectpay.com.br/pay/PPU38CQGGMG?')} target="_blank" rel="noopener noreferrer">Quero começar agora</a>
               </article>
@@ -642,29 +656,17 @@ export default function Features() {
                   <span>Pague uma vez,</span>
                   <span>use para sempre</span>
                 </h4>
-                <div className="pricing-card__price pricing-card__price--master"><span>12x de</span><strong>R$ 69,98</strong></div>
-                <p className="pricing-card__detail">ou R$ 697 à vista&nbsp; • &nbsp;Acesso vitalício</p>
+                <div className="pricing-card__price pricing-card__price--master"><span>{COMMERCIAL_PLANS.master.installmentCount}x de</span><strong>{commercialPrice(COMMERCIAL_PLANS.master.installmentCents)}</strong></div>
+                <p className="pricing-card__detail">ou {commercialPrice(COMMERCIAL_PLANS.master.priceCents)} à vista&nbsp; • &nbsp;Acesso vitalício</p>
                 <ul>
-                  <li>Acesso vitalício à plataforma</li>
-                  <li>Conecte 6 contas do Mercado Livre</li>
-                  <li>Conecte 6 contas da Shopee</li>
-                  <li>Conecte 6 contas da Amazon</li>
-                  <li>Acesso aos fornecedores Amazon, Shopee e Mercado Livre com envio mais rápido</li>
+                  {COMMERCIAL_PLANS.master.features.map((feature) => <li key={feature}>{feature}</li>)}
                 </ul>
                 <div className="master-bonus-box">
-                  <strong>Flow + CapCut Pro inclusos</strong>
-                  <p>No plano Master, você recebe os dois acessos sem cobranças separadas.</p>
-                  <div className="master-bonus-box__item">
-                    <img src="/assets/check-icon.svg" alt="" aria-hidden="true" />
-                    <span>Flow Pro com 1K de saldo</span>
-                    <del>R$ 700,00</del>
-                  </div>
-                  <div className="master-bonus-box__item">
-                    <img src="/assets/check-icon.svg" alt="" aria-hidden="true" />
-                    <span>CapCut Pro</span>
-                    <del>R$ 244,90</del>
-                  </div>
-                  <small>Economia total de R$ 944,90 com os dois bônus inclusos.</small>
+                  <strong>Bônus exclusivos do vitalício</strong>
+                  {COMMERCIAL_PLANS.master.bonuses.map((bonus) => <div className="master-bonus-box__item" key={bonus}>
+                    <img src="/assets/check-icon.svg" alt="" aria-hidden="true" /><span>{bonus}</span>
+                  </div>)}
+                  <small>Total no parcelamento: {commercialPrice(MASTER_INSTALLMENT_TOTAL_CENTS)}.</small>
                 </div>
                 <a {...getCheckoutProps('master', 'https://checkout.perfectpay.com.br/pay/PPU38CQGGNH?')} target="_blank" rel="noopener noreferrer">Quero começar agora</a>
               </article>
@@ -675,14 +677,16 @@ export default function Features() {
                   <span>Mais contas para</span>
                   <span>ampliar suas vendas</span>
                 </h4>
-                <div className="pricing-card__price"><strong>R$ 297</strong><span>/3 meses</span></div>
+                <div className="pricing-card__price"><strong>{commercialPrice(COMMERCIAL_PLANS.trial.priceCents)}</strong><span>/3 meses</span></div>
                 <ul>
-                  <li>Acesso trimestral à plataforma</li>
-                  <li>Conecte 3 contas do Mercado Livre</li>
-                  <li>Conecte 3 contas da Shopee</li>
-                  <li>Conecte 3 contas da Amazon</li>
-                  <li>Acesso aos fornecedores Amazon, Shopee e Mercado Livre</li>
+                  {COMMERCIAL_PLANS.trial.features.map((feature) => <li key={feature}>{feature}</li>)}
                 </ul>
+                <div className="master-bonus-box">
+                  <strong>Bônus incluso no trimestral</strong>
+                  {COMMERCIAL_PLANS.trial.bonuses.map((bonus) => <div className="master-bonus-box__item" key={bonus}>
+                    <img src="/assets/check-icon.svg" alt="" aria-hidden="true" /><span>{bonus}</span>
+                  </div>)}
+                </div>
                 <a {...getCheckoutProps('trial', 'https://checkout.perfectpay.com.br/pay/PPU38CQGI6H?')} target="_blank" rel="noopener noreferrer">Quero começar agora</a>
               </article>
             </div>
@@ -707,7 +711,7 @@ export default function Features() {
 
                 <div className="mt-[22px] flex items-center">
                   <p className="font-albert text-[36px] font-semibold leading-[0.76] tracking-normal text-white">
-                    R$375
+                    {commercialPrice(COMMERCIAL_PLANS.starter.priceCents)}
                   </p>
                   <p className="font-albert text-[16px] font-normal leading-[0.76] tracking-normal text-white">
                     /por mês
@@ -888,7 +892,7 @@ export default function Features() {
                 <div className="mt-[22px] flex flex-col gap-[4px] text-left">
                   <div className="flex items-center">
                     <p className="font-albert text-[36px] font-semibold leading-[0.76] tracking-normal text-white">
-                      R$ 695
+                      {commercialPrice(COMMERCIAL_PLANS.master.priceCents)}
                     </p>
                     <p className="font-albert text-[16px] font-normal leading-[0.76] tracking-normal text-white">
                       /vitalicio
@@ -1075,7 +1079,8 @@ export default function Features() {
             'Conecte sua conta do Mercado Livre',
             'Prepare e publique seus anúncios pela plataforma',
             'Acompanhe status, qualidade e tarifas estimadas',
-            'Crie conteúdos com CapCut Pro e Flow no Plano Vitalício',
+            'Aprenda com a área de membros inclusa no trimestral e no vitalício',
+            'Use Gemini Plus e CapCut Pro, bônus exclusivos do vitalício',
           ].map((item) => (
             <li key={item} className="flex items-center gap-3 font-articulat text-sm text-white/85 sm:text-base">
               <span className="final-call__check">✓</span>
