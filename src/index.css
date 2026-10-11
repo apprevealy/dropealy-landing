@@ -706,7 +706,19 @@ body {
   height: 64px;
   flex: 0 0 64px;
   align-items: center;
+  gap: 10px;
   border-bottom: 1px solid rgba(255,255,255,.28);
+}
+
+.pricing-card__feature-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.pricing-card__feature-label {
+  min-width: 0;
 }
 
 .pricing-card li:last-child {

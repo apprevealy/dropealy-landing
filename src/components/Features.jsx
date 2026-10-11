@@ -5,6 +5,21 @@ import { GraduationCap, Sparkles } from 'lucide-react'
 import { useCheckout, CheckoutStatus } from './CheckoutProvider'
 import { COMMERCIAL_PLANS, commercialPrice, MASTER_INSTALLMENT_TOTAL_CENTS } from '../lib/commercialPlans.mjs'
 
+function PlanFeatures({ features }) {
+  return (
+    <ul>
+      {features.map(({ label, icon }) => (
+        <li key={label}>
+          {icon && (
+            <img className="pricing-card__feature-icon" src={`/assets/${icon}-icon.svg`} alt="" aria-hidden="true" width="20" height="20" />
+          )}
+          <span className="pricing-card__feature-label">{label}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function GiftIcon() {
   return (
     <svg className="arsenal-bonus__icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -643,9 +658,7 @@ export default function Features() {
                   <span>a vender</span>
                 </h4>
                 <div className="pricing-card__price"><strong>{commercialPrice(COMMERCIAL_PLANS.starter.priceCents)}</strong><span>/mês</span></div>
-                <ul>
-                  {COMMERCIAL_PLANS.starter.features.map((feature) => <li key={feature}>{feature}</li>)}
-                </ul>
+                <PlanFeatures features={COMMERCIAL_PLANS.starter.features} />
                 <a {...getCheckoutProps('starter', 'https://checkout.perfectpay.com.br/pay/PPU38CQGGMG?')} target="_blank" rel="noopener noreferrer">Quero começar agora</a>
               </article>
 
@@ -658,9 +671,7 @@ export default function Features() {
                 </h4>
                 <div className="pricing-card__price pricing-card__price--master"><span>{COMMERCIAL_PLANS.master.installmentCount}x de</span><strong>{commercialPrice(COMMERCIAL_PLANS.master.installmentCents)}</strong></div>
                 <p className="pricing-card__detail">ou {commercialPrice(COMMERCIAL_PLANS.master.priceCents)} à vista&nbsp; • &nbsp;Acesso vitalício</p>
-                <ul>
-                  {COMMERCIAL_PLANS.master.features.map((feature) => <li key={feature}>{feature}</li>)}
-                </ul>
+                <PlanFeatures features={COMMERCIAL_PLANS.master.features} />
                 <div className="master-bonus-box">
                   <strong>Bônus exclusivos do vitalício</strong>
                   {COMMERCIAL_PLANS.master.bonuses.map((bonus) => <div className="master-bonus-box__item" key={bonus}>
@@ -678,9 +689,7 @@ export default function Features() {
                   <span>ampliar suas vendas</span>
                 </h4>
                 <div className="pricing-card__price"><strong>{commercialPrice(COMMERCIAL_PLANS.trial.priceCents)}</strong><span>/3 meses</span></div>
-                <ul>
-                  {COMMERCIAL_PLANS.trial.features.map((feature) => <li key={feature}>{feature}</li>)}
-                </ul>
+                <PlanFeatures features={COMMERCIAL_PLANS.trial.features} />
                 <div className="master-bonus-box">
                   <strong>Bônus incluso no trimestral</strong>
                   {COMMERCIAL_PLANS.trial.bonuses.map((bonus) => <div className="master-bonus-box__item" key={bonus}>
