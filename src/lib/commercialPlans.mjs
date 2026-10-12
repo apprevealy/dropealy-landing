@@ -6,9 +6,9 @@ export const COMMERCIAL_PLANS = {
     features: [
       { label: 'Acesso mensal à plataforma' },
       { label: '1 conta Mercado Livre', icon: 'check' },
-      { label: 'Acesso aos fornecedores do Mercado Livre' },
       { label: 'Sem Integração Shopee', icon: 'x' },
       { label: 'Sem Integração Amazon', icon: 'x' },
+      { label: 'Envios feitos em 15–25 dias úteis', icon: 'check' },
     ],
     bonuses: [],
   },
@@ -19,27 +19,27 @@ export const COMMERCIAL_PLANS = {
       { label: '3 contas Mercado Livre', icon: 'check' },
       { label: '3 contas Shopee', icon: 'check' },
       { label: '3 contas Amazon', icon: 'check' },
-      { label: 'Acesso aos fornecedores Amazon, Shopee e Mercado Livre' },
+      { label: 'Envios feitos em 3–5 dias úteis', icon: 'check' },
     ],
     bonuses: ['Área de membros exclusiva com aulas'],
   },
   master: {
-    priceCents: 59700,
+    priceCents: 49700,
     installmentCount: 12,
-    installmentCents: 5994,
+    installmentCents: 4990,
     features: [
       { label: 'Acesso vitalício à plataforma' },
       { label: '6 contas Mercado Livre', icon: 'check' },
       { label: '6 contas Shopee', icon: 'check' },
       { label: '6 contas Amazon', icon: 'check' },
-      { label: 'Acesso aos fornecedores Amazon, Shopee e Mercado Livre com envio mais rápido' },
+      { label: 'Envios feitos em 3–5 dias úteis', icon: 'check' },
     ],
     bonuses: ['Área de membros exclusiva com aulas', 'Gemini Plus', 'CapCut Pro'],
   },
 }
 
 export function commercialPrice(cents) {
-  return `R$ ${(cents / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`
+  return `R$ ${(cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: cents % 100 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`
 }
 
 export const MASTER_INSTALLMENT_TOTAL_CENTS = COMMERCIAL_PLANS.master.installmentCount * COMMERCIAL_PLANS.master.installmentCents
