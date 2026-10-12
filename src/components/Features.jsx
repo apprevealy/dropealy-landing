@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { GraduationCap, Sparkles } from 'lucide-react'
 import { useCheckout, CheckoutStatus } from './CheckoutProvider'
 import { COMMERCIAL_PLANS, commercialPrice, MASTER_INSTALLMENT_TOTAL_CENTS } from '../lib/commercialPlans.mjs'
 
@@ -599,7 +598,7 @@ export default function Features() {
                 </div>
               </article>
               <article className="arsenal-card arsenal-card--pink">
-                <div className="arsenal-thumb arsenal-thumb--bonus-art" aria-hidden="true"><GraduationCap /></div>
+                <img className="arsenal-thumb" src="/images/bonus/members-area-1760x640.webp" alt="Área de membros da Dropealy com módulos e aulas" width="1760" height="640" loading="lazy" decoding="async" />
                 <div>
                   <span className="arsenal-bonus"><GiftIcon /><b>Bônus do trimestral e vitalício</b></span>
                   <h4>Área de Membros Exclusiva com Aulas</h4>
@@ -607,7 +606,7 @@ export default function Features() {
                 </div>
               </article>
               <article className="arsenal-card arsenal-card--pink">
-                <div className="arsenal-thumb arsenal-thumb--bonus-art" aria-hidden="true"><Sparkles /></div>
+                <img className="arsenal-thumb" src="/images/bonus/gemini-plus-1760x640.webp" alt="Gemini Plus para apoiar ideias e conteúdos" width="1760" height="640" loading="lazy" decoding="async" />
                 <div>
                   <span className="arsenal-bonus"><GiftIcon /><b>Bônus do plano vitalício</b></span>
                   <h4>Gemini Plus</h4>
@@ -615,7 +614,7 @@ export default function Features() {
                 </div>
               </article>
               <article className="arsenal-card arsenal-card--gray">
-                <img className="arsenal-thumb arsenal-thumb--wide-fit" src="/assets/capcut-pro-dropealy.png" alt="Acesso ao CapCut Pro" />
+                <img className="arsenal-thumb" src="/images/bonus/capcut-pro-1760x640.webp" alt="Acesso ao CapCut Pro" width="1760" height="640" loading="lazy" decoding="async" />
                 <div>
                   <span className="arsenal-bonus"><GiftIcon /><b>Bônus do plano vitalício</b></span>
                   <h4>CapCut Pro</h4>
