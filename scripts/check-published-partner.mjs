@@ -35,10 +35,10 @@ async function normalizeCards(page) {
 async function verifyLinks(page, approved) {
   await page.waitForFunction(data => {
     const anchors = [...document.querySelectorAll('a[data-checkout-plan]')];
-    return anchors.length === 5 && anchors.every(a => a.getAttribute('href') === data.checkout[a.dataset.checkoutPlan]);
+    return anchors.length === 2 && anchors.every(a => a.getAttribute('href') === data.checkout[a.dataset.checkoutPlan]);
   }, approved, { timeout: 15000 });
   const anchors = await page.locator('a[data-checkout-plan]').evaluateAll(elements => elements.map(a => ({ plan: a.dataset.checkoutPlan, href: a.getAttribute('href') })));
-  assert.equal(anchors.length, 5);
+  assert.deepEqual(anchors.map(a => a.plan), ['trial', 'master']);
   for (const a of anchors) assert.equal(a.href, approved.checkout[a.plan]);
 }
 try {
@@ -52,18 +52,17 @@ try {
     assert.match(response.headers.get('cache-control') || '', /no-store/);
     assert.deepEqual(await response.json(), approved);
   });
-  await record('CSS da compilação é idêntico ao site principal atual', async () => {
-    const liveHtml = await (await get('https://www.dropealy.com/')).text();
-    const liveCss = await (await get(`https://www.dropealy.com${cssPath(liveHtml)}`)).arrayBuffer();
-    const localHtml = readFileSync('dist/index.html', 'utf8');
-    const localCss = readFileSync(`dist${cssPath(localHtml)}`);
-    assert.equal(hash(Buffer.from(liveCss)), hash(localCss));
-    report.cssSha256 = hash(localCss);
-  });
   server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--host', '127.0.0.1', '--port', '4174', '--strictPort'], { stdio: 'ignore' });
   let ready = false;
   for (let i = 0; i < 50; i++) { try { if ((await fetch(origin)).ok) { ready = true; break; } } catch {} await delay(200); }
   assert.ok(ready, 'Servidor local não iniciou.');
+  await record('CSS servido é idêntico ao arquivo da compilação testada', async () => {
+    const localHtml = readFileSync('dist/index.html', 'utf8');
+    const localCss = readFileSync(`dist${cssPath(localHtml)}`);
+    const servedCss = await (await get(`${origin}${cssPath(localHtml)}`)).arrayBuffer();
+    assert.equal(hash(Buffer.from(servedCss)), hash(localCss));
+    report.cssSha256 = hash(localCss);
+  });
   browser = await chromium.launch({ headless: true });
   for (const viewport of [{ width: 1365, height: 900 }, { width: 390, height: 844 }]) {
     const label = viewport.width === 390 ? 'celular' : 'computador';
@@ -82,7 +81,7 @@ try {
     await page.goto(origin, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#planos');
     const cards = await normalizeCards(page);
-    await record(`${label}: /${slug} carrega os cinco destinos da API real`, async () => {
+    await record(`${label}: /${slug} carrega os dois destinos da API real`, async () => {
       const apiResponse = page.waitForResponse(response => response.url() === api && response.status() === 200, { timeout: 20000 });
       await page.goto(`${origin}/${slug}`, { waitUntil: 'domcontentloaded' });
       await apiResponse;

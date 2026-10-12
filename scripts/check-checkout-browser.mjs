@@ -20,13 +20,12 @@ function published(slug, version = 1) {
     Object.fromEntries(['starter', 'trial', 'master'].map(plan => [plan,
       `https://checkout.perfectpay.com.br/pay/SIMULADO-${slug}-${plan}-v${version}?ref=${slug}&src=teste`])) };
 }
-const homeLinks = { starter: 'https://checkout.perfectpay.com.br/pay/PPU38CQGGMG?',
-  master: 'https://checkout.perfectpay.com.br/pay/PPU38CQGGNH?',
-  trial: 'https://checkout.perfectpay.com.br/pay/PPU38CQGI6H?' };
+const homeLinks = { trial: 'https://checkout.perfectpay.com.br/pay/PPU38CQGI6H?',
+  master: 'https://checkout.perfectpay.com.br/pay/PPU38CQGGNH?' };
 async function waitReady(page, slug, version = 1) {
   await page.waitForFunction(({ slug, version }) => {
     const links = [...document.querySelectorAll('a[data-checkout-plan]')];
-    return links.length === 5 && links.every(a => a.getAttribute('href')?.includes(`SIMULADO-${slug}-${a.dataset.checkoutPlan}-v${version}?`));
+    return links.length === 2 && links.every(a => a.getAttribute('href')?.includes(`SIMULADO-${slug}-${a.dataset.checkoutPlan}-v${version}?`));
   }, { slug, version });
 }
 async function cardStructure(page) {
@@ -37,8 +36,23 @@ async function cardStructure(page) {
   });
 }
 async function assertBlocked(page) {
-  await page.waitForFunction(() => [...document.querySelectorAll('a[data-checkout-plan]')].length === 5 &&
+  await page.waitForFunction(() => [...document.querySelectorAll('a[data-checkout-plan]')].length === 2 &&
     [...document.querySelectorAll('a[data-checkout-plan]')].every(a => !a.hasAttribute('href') && a.getAttribute('aria-disabled') === 'true'));
+}
+async function assertPlanLayout(page, viewport) {
+  const cards = page.locator('#planos .pricing-card');
+  assert.equal(await cards.count(), 2);
+  assert.deepEqual(await cards.locator('a[data-checkout-plan]').evaluateAll(links => links.map(link => link.dataset.checkoutPlan)), ['trial', 'master']);
+  const trial = await cards.nth(0).boundingBox();
+  const master = await cards.nth(1).boundingBox();
+  assert.ok(trial && master, 'Os dois planos devem estar visíveis.');
+  if (viewport.width > 1100) {
+    assert.ok(trial.x + trial.width <= master.x, 'Trimestral à esquerda do vitalício.');
+    assert.ok(Math.abs(trial.y - master.y) <= 1, 'Planos alinhados na mesma linha.');
+  } else {
+    assert.ok(trial.y + trial.height <= master.y, 'Trimestral antes do vitalício no celular.');
+  }
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'Sem rolagem horizontal.');
 }
 try {
   let ready = false;
@@ -75,19 +89,21 @@ try {
     const pageErrors = [];
     page.on('pageerror', error => pageErrors.push(error.message));
     let baseline;
-    await record(`${label}: início mantém os três destinos e não consulta parceiros`, async () => {
+    await record(`${label}: início mostra trimestral e vitalício, sem consultar parceiros`, async () => {
       await page.goto(origin, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('#planos');
       for (const [plan, href] of Object.entries(homeLinks)) assert.equal(await page.locator(`#planos a[data-checkout-plan="${plan}"]`).getAttribute('href'), href);
+      await assertPlanLayout(page, viewport);
       assert.equal(calls, 0);
       baseline = await cardStructure(page);
     });
     for (const slug of ['parceiro-a', 'parceiro-b']) {
-      await record(`${label}: ${slug} mantém o conteúdo visual e usa seus cinco destinos`, async () => {
+      await record(`${label}: ${slug} mantém o conteúdo visual e usa seus dois destinos`, async () => {
         await page.goto(`${origin}/${slug}`, { waitUntil: 'domcontentloaded' });
         await waitReady(page, slug);
         assert.equal(await cardStructure(page), baseline);
-        assert.equal(await page.locator('a[data-checkout-plan]').count(), 5);
+        assert.equal(await page.locator('a[data-checkout-plan]').count(), 2);
+        await assertPlanLayout(page, viewport);
         for (const a of await page.locator('a[data-checkout-plan]').all()) {
           const plan = await a.getAttribute('data-checkout-plan');
           assert.equal(await a.getAttribute('href'), configs.get(slug).checkout[plan]);
@@ -111,7 +127,7 @@ try {
     }
     await record(`${label}: Trial legado nulo não usa o link de outro plano`, async () => {
       await page.goto(`${origin}/trial-legado`);
-      await page.waitForFunction(() => document.querySelector('a[data-checkout-plan="starter"]')?.getAttribute('href')?.includes('SIMULADO-trial-legado'));
+      await page.waitForFunction(() => document.querySelector('a[data-checkout-plan="master"]')?.getAttribute('href')?.includes('SIMULADO-trial-legado'));
       assert.equal(await page.locator('a[data-checkout-plan="trial"]').getAttribute('href'), null);
       assert.equal(await page.locator('#planos a[data-checkout-plan="master"]').getAttribute('href'), configs.get('trial-legado').checkout.master);
     });
