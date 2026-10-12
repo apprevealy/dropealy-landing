@@ -148,7 +148,7 @@ export default function Features() {
       question: 'Eu recebo algum modelo ou treinamento para começar?',
       answer: (
         <span className="text-left">
-          O trimestral inclui a área de membros exclusiva com aulas. No vitalício, os bônus são a área de membros com aulas, Gemini Plus e CapCut Pro. O mensal não inclui esses bônus.
+          O trimestral inclui a Área de Membros Exclusiva com Aulas. No vitalício, os bônus são a Área de Membros Exclusiva com Aulas, Gemini Plus e CapCut Pro. O mensal não inclui esses bônus.
         </span>
       ),
     },
@@ -602,7 +602,7 @@ export default function Features() {
                 <div className="arsenal-thumb arsenal-thumb--bonus-art" aria-hidden="true"><GraduationCap /></div>
                 <div>
                   <span className="arsenal-bonus"><GiftIcon /><b>Bônus do trimestral e vitalício</b></span>
-                  <h4>Área de membros exclusiva com aulas</h4>
+                  <h4>Área de Membros Exclusiva com Aulas</h4>
                   <p>Aprenda a usar a ferramenta e colocar sua operação em prática.</p>
                 </div>
               </article>

@@ -2,7 +2,7 @@
 // Preços de divulgação: os links de pagamento aprovados continuam na CheckoutProvider.
 export const COMMERCIAL_PLANS = {
   starter: {
-    priceCents: 9700,
+    priceCents: 12700,
     features: [
       { label: 'Acesso mensal à plataforma' },
       { label: '1 conta Mercado Livre', icon: 'check' },
@@ -21,7 +21,7 @@ export const COMMERCIAL_PLANS = {
       { label: '3 contas Amazon', icon: 'check' },
       { label: 'Envios feitos em 3–5 dias úteis', icon: 'check' },
     ],
-    bonuses: ['Área de membros exclusiva com aulas'],
+    bonuses: ['Área de Membros Exclusiva com Aulas'],
   },
   master: {
     priceCents: 49700,
@@ -34,7 +34,7 @@ export const COMMERCIAL_PLANS = {
       { label: '6 contas Amazon', icon: 'check' },
       { label: 'Envios feitos em 3–5 dias úteis', icon: 'check' },
     ],
-    bonuses: ['Área de membros exclusiva com aulas', 'Gemini Plus', 'CapCut Pro'],
+    bonuses: ['Área de Membros Exclusiva com Aulas', 'Gemini Plus', 'CapCut Pro'],
   },
 }
 
