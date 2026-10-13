@@ -27,7 +27,10 @@ try {
   assert.deepEqual([...home.matchAll(/data-checkout-plan="([^"]+)"/g)].map(match => match[1]), ['trial', 'master']);
   assert.match(home, /R\$ 247/);
   assert.match(home, /R\$ 497/);
-  assert.doesNotMatch(home, /12x|parcelamento|49,90|598,80|dropealy-coupon/);
+  assert.match(home, /12x de/);
+  assert.match(home, /R\$ 49,90/);
+  assert.match(home, /Total no parcelamento: R\$ 598,80/);
+  assert.doesNotMatch(home, /dropealy-coupon/);
   for (const slug of ['parceiro-a', 'parceiro-b']) {
     const checkout = Object.fromEntries(['starter', 'trial', 'master'].map(plan => [plan, `https://checkout.perfectpay.com.br/pay/${slug}-${plan}?ref=${slug}`]));
     const html = after({ route: { kind: 'partner', slug }, status: 'ready', data: { slug, checkout } });
@@ -52,6 +55,8 @@ try {
   const state = { route: { kind: 'partner', slug }, status: 'ready', data };
   const waiting = after(state);
   assert.match(waiting, /dropealy-coupon/);
+  assert.match(waiting, /12x de/);
+  assert.match(waiting, /R\$ 49,90/);
   assert.doesNotMatch(waiting, /LOCAL-DISCOUNT|R\$ 197|R\$ 397|pricing-card__original/);
   const applied = after({ ...state, couponAppliedRevision: promoRevision(data), couponInput: 'TESTE_LOCAL' });
   assert.match(applied, /R\$ 197/);
@@ -67,13 +72,15 @@ try {
     assert.doesNotMatch(html, /dropealy-coupon|LOCAL-DISCOUNT|R\$ 197|R\$ 397|pricing-card__original/);
     assert.match(html, /R\$ 247/);
     assert.match(html, /R\$ 497/);
+    assert.match(html, /12x de/);
+    assert.match(html, /R\$ 49,90/);
   }
   for (const status of ['loading', 'error', 'not_found']) {
     const html = after({ route: { kind: 'partner', slug: 'parceiro-a' }, status, data: null });
     assert.equal((html.match(/aria-disabled="true"/g) || []).length, 2);
     assert.doesNotMatch(html, /href="https:\/\/checkout\.(?:perfectpay|centerpag)/);
   }
-  console.log('Renderização validada: 2 planos; preços normais sem parcelas; cupom pronto/aplicado/OFF/incompleto; parceiros isolados e falhas sem checkout alternativo.');
+  console.log('Renderização validada: Trial247 e Master12x49,90 por padrão; cupom aplicado preserva preços/checkouts promocionais; remoção/OFF/incompleto restauram o padrão; parceiros isolados.');
 } finally {
   rmSync(tempDir, { recursive: true, force: true });
 }

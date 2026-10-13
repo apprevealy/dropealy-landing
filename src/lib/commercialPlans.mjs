@@ -25,6 +25,8 @@ export const COMMERCIAL_PLANS = {
   },
   master: {
     priceCents: 49700,
+    installmentCount: 12,
+    installmentCents: 4990,
     features: [
       { label: 'Acesso vitalício à plataforma' },
       { label: '6 contas Mercado Livre', icon: 'check' },
@@ -35,6 +37,8 @@ export const COMMERCIAL_PLANS = {
     bonuses: ['Área de Membros Exclusiva com Aulas', 'Gemini Plus', 'CapCut Pro'],
   },
 }
+
+export const MASTER_INSTALLMENT_TOTAL_CENTS = COMMERCIAL_PLANS.master.installmentCount * COMMERCIAL_PLANS.master.installmentCents
 
 export function commercialPrice(cents) {
   return `R$ ${(cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: cents % 100 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`

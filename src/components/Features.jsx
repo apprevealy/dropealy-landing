@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useCheckout, usePricing, CouponControl, CheckoutStatus } from './CheckoutProvider'
-import { COMMERCIAL_PLANS, commercialPrice } from '../lib/commercialPlans.mjs'
+import { COMMERCIAL_PLANS, MASTER_INSTALLMENT_TOTAL_CENTS, commercialPrice } from '../lib/commercialPlans.mjs'
 
 function PlanFeatures({ features }) {
   return (
@@ -156,7 +156,7 @@ export default function Features() {
       question: 'Quanto custa cada plano?',
       answer: (
         <span className="text-left">
-          Trimestral: {commercialPrice(prices.trial)} por 3 meses. Vitalício: {commercialPrice(prices.master)} à vista, com acesso vitalício.
+          Trimestral: {commercialPrice(prices.trial)} por 3 meses. Vitalício: {couponApplied ? <>{commercialPrice(prices.master)} à vista</> : <>{COMMERCIAL_PLANS.master.installmentCount}x de {commercialPrice(COMMERCIAL_PLANS.master.installmentCents)} ou {commercialPrice(prices.master)} à vista</>}, com acesso vitalício.
         </span>
       ),
     },
@@ -678,14 +678,18 @@ export default function Features() {
                   <span>use para sempre</span>
                 </h4>
                 {couponApplied ? <p className="pricing-card__original"><s>{commercialPrice(normalPrices.master)}</s></p> : null}
-                <div className="pricing-card__price pricing-card__price--master"><strong>{commercialPrice(prices.master)}</strong></div>
-                <p className="pricing-card__detail">À vista · Acesso vitalício</p>
+                <div className="pricing-card__price pricing-card__price--master">
+                  {!couponApplied ? <span>{COMMERCIAL_PLANS.master.installmentCount}x de</span> : null}
+                  <strong>{commercialPrice(couponApplied ? prices.master : COMMERCIAL_PLANS.master.installmentCents)}</strong>
+                </div>
+                <p className="pricing-card__detail">{couponApplied ? 'À vista · Acesso vitalício' : <>ou {commercialPrice(prices.master)} à vista&nbsp; • &nbsp;Acesso vitalício</>}</p>
                 <PlanFeatures features={COMMERCIAL_PLANS.master.features} />
                 <div className="master-bonus-box">
                   <strong>Bônus exclusivos do vitalício</strong>
                   {COMMERCIAL_PLANS.master.bonuses.map((bonus) => <div className="master-bonus-box__item" key={bonus}>
                     <img src="/assets/check-icon.svg" alt="" aria-hidden="true" /><span>{bonus}</span>
                   </div>)}
+                  {!couponApplied ? <small>Total no parcelamento: {commercialPrice(MASTER_INSTALLMENT_TOTAL_CENTS)}.</small> : null}
                 </div>
                 <a {...getCheckoutProps('master', 'https://checkout.perfectpay.com.br/pay/PPU38CQGGNH?')} target="_blank" rel="noopener noreferrer">Quero começar agora</a>
               </article>
