@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useCheckout, CheckoutStatus } from './CheckoutProvider'
-import { COMMERCIAL_PLANS, commercialPrice, MASTER_INSTALLMENT_TOTAL_CENTS } from '../lib/commercialPlans.mjs'
+import { useCheckout, usePricing, CouponControl, CheckoutStatus } from './CheckoutProvider'
+import { COMMERCIAL_PLANS, commercialPrice } from '../lib/commercialPlans.mjs'
 
 function PlanFeatures({ features }) {
   return (
@@ -37,6 +37,7 @@ function CrownIcon() {
 
 export default function Features() {
   const getCheckoutProps = useCheckout()
+  const { prices, normalPrices, couponApplied } = usePricing()
   const [openIndex, setOpenIndex] = useState(-1)
   const [currentStep, setCurrentStep] = useState(0)
   const [deliveryCardIndex, setDeliveryCardIndex] = useState(0)
@@ -155,7 +156,7 @@ export default function Features() {
       question: 'Quanto custa cada plano?',
       answer: (
         <span className="text-left">
-          Trimestral: {commercialPrice(COMMERCIAL_PLANS.trial.priceCents)} por 3 meses. Vitalício: {commercialPrice(COMMERCIAL_PLANS.master.priceCents)} à vista ou {COMMERCIAL_PLANS.master.installmentCount}x de {commercialPrice(COMMERCIAL_PLANS.master.installmentCents)}, total de {commercialPrice(MASTER_INSTALLMENT_TOTAL_CENTS)} no parcelamento.
+          Trimestral: {commercialPrice(prices.trial)} por 3 meses. Vitalício: {commercialPrice(prices.master)} à vista, com acesso vitalício.
         </span>
       ),
     },
@@ -648,6 +649,7 @@ export default function Features() {
               Escolha entre acesso trimestral e vitalício.
             </p>
 
+            <CouponControl />
             <CheckoutStatus />
             <div id="planos" className="pricing-grid">
               <article className="pricing-card">
@@ -656,7 +658,8 @@ export default function Features() {
                   <span>Mais contas para</span>
                   <span>ampliar suas vendas</span>
                 </h4>
-                <div className="pricing-card__price"><strong>{commercialPrice(COMMERCIAL_PLANS.trial.priceCents)}</strong><span>/3 meses</span></div>
+                {couponApplied ? <p className="pricing-card__original"><s>{commercialPrice(normalPrices.trial)}</s></p> : null}
+                <div className="pricing-card__price"><strong>{commercialPrice(prices.trial)}</strong><span>/3 meses</span></div>
                 <PlanFeatures features={COMMERCIAL_PLANS.trial.features} />
                 <div className="master-bonus-box">
                   <strong>Bônus incluso no trimestral</strong>
@@ -674,15 +677,15 @@ export default function Features() {
                   <span>Pague uma vez,</span>
                   <span>use para sempre</span>
                 </h4>
-                <div className="pricing-card__price pricing-card__price--master"><span>{COMMERCIAL_PLANS.master.installmentCount}x de</span><strong>{commercialPrice(COMMERCIAL_PLANS.master.installmentCents)}</strong></div>
-                <p className="pricing-card__detail">ou {commercialPrice(COMMERCIAL_PLANS.master.priceCents)} à vista&nbsp; • &nbsp;Acesso vitalício</p>
+                {couponApplied ? <p className="pricing-card__original"><s>{commercialPrice(normalPrices.master)}</s></p> : null}
+                <div className="pricing-card__price pricing-card__price--master"><strong>{commercialPrice(prices.master)}</strong></div>
+                <p className="pricing-card__detail">À vista · Acesso vitalício</p>
                 <PlanFeatures features={COMMERCIAL_PLANS.master.features} />
                 <div className="master-bonus-box">
                   <strong>Bônus exclusivos do vitalício</strong>
                   {COMMERCIAL_PLANS.master.bonuses.map((bonus) => <div className="master-bonus-box__item" key={bonus}>
                     <img src="/assets/check-icon.svg" alt="" aria-hidden="true" /><span>{bonus}</span>
                   </div>)}
-                  <small>Total no parcelamento: {commercialPrice(MASTER_INSTALLMENT_TOTAL_CENTS)}.</small>
                 </div>
                 <a {...getCheckoutProps('master', 'https://checkout.perfectpay.com.br/pay/PPU38CQGGNH?')} target="_blank" rel="noopener noreferrer">Quero começar agora</a>
               </article>

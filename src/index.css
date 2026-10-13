@@ -651,8 +651,10 @@ body {
 
 .pricing-card__price {
   display: flex;
+  flex-wrap: wrap;
   height: 104px;
   align-items: center;
+  align-content: center;
   gap: 4px;
   border-top: 1px solid rgba(255,255,255,.36);
   border-bottom: 1px solid rgba(255,255,255,.36);
@@ -679,6 +681,74 @@ body {
 
 .pricing-card__price--master span { font-size: 23px; }
 .pricing-card__price--master strong { color: #ffeb78; }
+
+.pricing-card__original {
+  margin: 0 0 8px;
+  color: rgba(255,255,255,.62);
+  font-size: 18px;
+}
+
+.coupon-control {
+  width: 100%;
+  max-width: 700px;
+  margin: 32px auto 16px;
+  padding: 20px;
+  border: 1px solid rgba(245,158,43,.5);
+  border-radius: 16px;
+  background: linear-gradient(120deg, rgba(245,158,43,.12), rgba(15,15,15,.9));
+  text-align: left;
+}
+
+.coupon-control label {
+  display: block;
+  margin-bottom: 10px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.coupon-control__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.coupon-control input {
+  flex: 1 1 180px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 9px;
+  background: rgba(0,0,0,.3);
+  color: white;
+  font-size: 16px;
+}
+
+.coupon-control button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #f59e2b;
+  border-radius: 9px;
+  background: #f59e2b;
+  color: #151515;
+  font-weight: 600;
+}
+
+.coupon-control .coupon-control__clear {
+  border-color: rgba(255,255,255,.3);
+  background: transparent;
+  color: white;
+}
+
+.coupon-control input:focus-visible,
+.coupon-control button:focus-visible {
+  outline: 2px solid #ffeb78;
+  outline-offset: 3px;
+}
+
+.coupon-control :disabled { cursor: wait; opacity: .6; }
+.coupon-control p { margin: 12px 0 0; color: rgba(255,255,255,.8); font-size: 14px; }
 
 .pricing-card__detail {
   display: flex;

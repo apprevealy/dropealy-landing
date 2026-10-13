@@ -1,4 +1,4 @@
-import { isValidSlug } from './promoCreator.mjs';
+import { couponIsAvailable, isValidSlug, NORMAL_PRICES, promoRevision } from './promoCreator.mjs';
 
 export const RESERVED_ROUTES = new Set([
   'api', 'assets', 'monitor', 'admin', 'login', 'logout', 'suporte',
@@ -19,16 +19,29 @@ export function checkoutMessage(state) {
   if (state.status === 'loading') return 'Carregando os planos desta página...';
   if (state.status === 'not_found') return 'Página indisponível ou ainda não aprovada.';
   if (state.status === 'error') return 'Planos temporariamente indisponíveis. Atualize a página para tentar novamente.';
-  return '';
+  if (state.checking) return 'Conferindo os planos desta página...';
+  return state.notice || '';
+}
+
+export function hasAppliedCoupon(state) {
+  return state.route.kind === 'partner' && state.status === 'ready' && state.data?.slug === state.route.slug &&
+    couponIsAvailable(state.data) && state.couponAppliedRevision === promoRevision(state.data);
+}
+
+export function publicPrices(state) {
+  return hasAppliedCoupon(state)
+    ? { trial: state.data.offer.discount.trial_cents, master: state.data.offer.discount.master_cents }
+    : NORMAL_PRICES;
 }
 
 // O destino original só existe na página inicial; nunca é fallback de um parceiro.
 export function checkoutProps(state, plan, originalHref) {
   if (!['starter', 'trial', 'master'].includes(plan)) throw new TypeError('Plano desconhecido.');
   const home = state.route.kind === 'home';
-  const ready = state.route.kind === 'partner' && state.status === 'ready' &&
+  const ready = state.route.kind === 'partner' && state.status === 'ready' && !state.checking &&
     state.data?.slug === state.route.slug;
-  const href = home ? originalHref : ready ? state.data.checkout[plan] ?? undefined : undefined;
+  const links = hasAppliedCoupon(state) ? state.data.offer.discount.checkout : state.data?.checkout;
+  const href = home ? originalHref : ready ? links?.[plan] ?? undefined : undefined;
   const disabled = !href;
   return {
     href,
