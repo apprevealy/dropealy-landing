@@ -4,7 +4,7 @@ import { COMMERCIAL_PLANS } from './commercialPlans.mjs';
 export const PROMO_API = 'https://app.dropealy.com/api/public/promo-creator';
 export const NORMAL_PRICES = Object.freeze({ trial: COMMERCIAL_PLANS.trial.priceCents, master: COMMERCIAL_PLANS.master.priceCents });
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const CHECKOUT = /^https:\/\/(?:checkout\.perfectpay\.com\.br|checkout\.centerpag\.com)\/pay\/[A-Za-z0-9_-]+\/?(?:\?[\x21-\x22\x24-\x5b\x5d-\x7e]*)?$/;
+const CHECKOUT = /^https:\/\/(?:checkout\.(?:perfectpay\.com\.br|centerpag\.com)\/pay\/|pay\.pagamentorevealy\.com\/)[A-Za-z0-9_-]+\/?(?:\?[\x21-\x22\x24-\x5b\x5d-\x7e]*)?$/;
 
 export class PromoCreatorError extends Error {
   constructor(code, message) {
@@ -79,10 +79,17 @@ export function promoRevision(data) {
 
 export function validatePublishedPromo(data, slug) {
   const links = data?.checkout;
+  const hasOffer = data != null && Object.hasOwn(data, 'offer');
+  // A oferta atual tem Trial e Master; Starter permanece apenas para compatibilidade.
+  const validStarter = hasOffer
+    ? links?.starter === null || isAllowedCheckout(links?.starter)
+    : isAllowedCheckout(links?.starter);
+  const validTrial = hasOffer
+    ? isAllowedCheckout(links?.trial)
+    : links?.trial === null || isAllowedCheckout(links?.trial);
   if (!isValidSlug(slug) || data?.slug !== slug || data.status !== 'published' ||
       !Number.isSafeInteger(data.version) || data.version < 1 ||
-      !isAllowedCheckout(links?.starter) || !isAllowedCheckout(links?.master) ||
-      !(links?.trial === null || isAllowedCheckout(links?.trial)) ||
+      !validStarter || !validTrial || !isAllowedCheckout(links?.master) ||
       !(data.coupon === null || typeof data.coupon === 'string')) {
     throw new PromoCreatorError('invalid_response', 'Configuração publicada inválida.');
   }
@@ -95,7 +102,7 @@ export function validatePublishedPromo(data, slug) {
     coupon: data.coupon,
   };
   // Legacy responses retain their shape and always use the standard offer.
-  if (Object.hasOwn(data, 'offer')) result.offer = validateOffer(data.offer, data.coupon);
+  if (hasOffer) result.offer = validateOffer(data.offer, data.coupon);
   return result;
 }
 
@@ -138,3 +145,4 @@ export async function fetchPublishedPromo(slug, {
     signal?.removeEventListener('abort', cancel);
   }
 }
+

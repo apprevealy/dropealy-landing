@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { checkoutProps, checkoutRoute, publicPrices } from '../src/lib/checkoutRoute.mjs';
 import {
   couponIsAvailable, couponMatches, fetchPublishedPromo, isAllowedCheckout, isValidSlug,
   normalizeCoupon, promoRevision, validatePublishedPromo,
@@ -35,11 +36,21 @@ test('valida formato e limites do slug', () => {
 test('bloqueia destinos arbitrários e formatos enganosos', () => {
   assert.equal(isAllowedCheckout(url('ABC')), true);
   assert.equal(isAllowedCheckout('https://checkout.centerpag.com/pay/ABC?'), true);
+  assert.equal(isAllowedCheckout('https://pay.pagamentorevealy.com/ABC/?ref=a%2Fb&src=teste+'), true);
   for (const value of ['http://checkout.perfectpay.com.br/pay/ABC',
     'https://checkout.perfectpay.com.br.evil.test/pay/ABC',
     'https://checkout.perfectpay.com.br@evil.test/pay/ABC',
     'javascript:alert(1)', 'https://checkout.perfectpay.com.br/outro/ABC',
     'https://checkout.perfectpay.com.br/pay/ABC#troca', null]) {
+    assert.equal(isAllowedCheckout(value), false);
+  }
+  for (const value of ['http://pay.pagamentorevealy.com/ABC',
+    'https://pay.pagamentorevealy.com.evil.test/ABC',
+    'https://pay.pagamentorevealy.com@evil.test/ABC',
+    'https://pay.pagamentorevealy.com:443/ABC',
+    'https://pay.pagamentorevealy.com/pay/ABC',
+    'https://pay.pagamentorevealy.com/ABC#troca',
+    'https://pay.pagamentorevealy.com/ABC?a=\\b']) {
     assert.equal(isAllowedCheckout(value), false);
   }
 });
@@ -68,9 +79,57 @@ test('valida a oferta aprovada preservando centavos e URLs promocionais sem rees
   assert.equal(couponIsAvailable(validated), true);
   assert.equal(validated.offer.discount.checkout.trial, data.offer.discount.checkout.trial);
   assert.equal(validated.offer.discount.checkout.master, data.offer.discount.checkout.master);
-  // A integração normal indisponível não substitui o checkout próprio do cupom.
+});
+
+test('nova oferta publicada permite Starter nulo e exige Trial e Master normais', () => {
+  for (const mode of ['standard', 'coupon']) {
+    const data = configured();
+    data.offer.mode = mode;
+    data.checkout.starter = null;
+    assert.deepEqual(validatePublishedPromo(data, data.slug), data);
+    for (const plan of ['trial', 'master']) {
+      for (const value of [null, undefined, 'https://evil.test/pay/ABC']) {
+        const incomplete = structuredClone(data);
+        incomplete.checkout[plan] = value;
+        assert.throws(() => validatePublishedPromo(incomplete, data.slug), { code: 'invalid_response' });
+      }
+    }
+  }
+});
+
+test('resposta legada continua exigindo Starter e Master mesmo com Trial nulo', () => {
+  const data = published();
   data.checkout.trial = null;
   assert.deepEqual(validatePublishedPromo(data, data.slug), data);
+  for (const plan of ['starter', 'master']) {
+    const incomplete = structuredClone(data);
+    incomplete.checkout[plan] = null;
+    assert.throws(() => validatePublishedPromo(incomplete, data.slug), { code: 'invalid_response' });
+  }
+});
+
+test('consulta nova oferta sem Starter preserva os checkouts normais e promocionais', async () => {
+  for (const mode of ['standard', 'coupon']) {
+    const data = configured();
+    data.offer.mode = mode;
+    data.checkout.starter = null;
+    data.checkout.master = 'https://pay.pagamentorevealy.com/MASTER?ref=a%2Fb&src=normal+';
+    data.offer.discount.checkout.master = 'https://pay.pagamentorevealy.com/DESCONTO?ref=a%2Fb&src=cupom+';
+    const validated = await fetchPublishedPromo(data.slug, { fetchImpl: async () => ok(data) });
+    assert.deepEqual(validated, data);
+    const state = { route: checkoutRoute(`/${data.slug}`), status: 'ready', data: validated };
+    assert.deepEqual(publicPrices(state), { trial: 24700, master: 49700 });
+    assert.equal(checkoutProps(state, 'starter', 'original-da-home').href, undefined);
+    for (const plan of ['trial', 'master']) {
+      assert.equal(checkoutProps(state, plan, 'original-da-home').href, data.checkout[plan]);
+    }
+    state.couponAppliedRevision = promoRevision(validated);
+    assert.deepEqual(publicPrices(state), mode === 'coupon' ? { trial: 19700, master: 39700 } : { trial: 24700, master: 49700 });
+    for (const plan of ['trial', 'master']) {
+      const expected = mode === 'coupon' ? data.offer.discount.checkout[plan] : data.checkout[plan];
+      assert.equal(checkoutProps(state, plan, 'original-da-home').href, expected);
+    }
+  }
 });
 test('configurar descontos não basta: modo, permissão e prontidão precisam autorizar o cupom', () => {
   for (const change of [
@@ -235,3 +294,4 @@ test('cancelamento do navegador não consulta nem reaproveita links', async () =
   }), { name: 'AbortError' });
   assert.equal(called, false);
 });
+
