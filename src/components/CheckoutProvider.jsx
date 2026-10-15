@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { couponIsAvailable, couponMatches, fetchPublishedPromo, normalizeCoupon, NORMAL_PRICES, promoRevision } from '../lib/promoCreator.mjs'
+import { couponFromSearch, couponIsAvailable, couponMatches, fetchPublishedPromo, normalizeCoupon, NORMAL_PRICES, promoRevision } from '../lib/promoCreator.mjs'
 import { checkoutMessage, checkoutProps, checkoutRoute, hasAppliedCoupon, publicPrices } from '../lib/checkoutRoute.mjs'
 
 export const CheckoutContext = createContext(null)
@@ -28,22 +28,22 @@ function subscribeLocation(notify) {
     if (window.history.replaceState === replace) window.history.replaceState = originalReplace
   }
 }
-const getPathname = () => window.location.pathname
-const getServerPathname = () => '/'
+const getLocation = () => `${window.location.pathname}${window.location.search}`
+const getServerLocation = () => '/'
 
 export function CheckoutProvider({ children }) {
-  const pathname = useSyncExternalStore(subscribeLocation, getPathname, getServerPathname)
-  return <CheckoutSession key={pathname} pathname={pathname}>{children}</CheckoutSession>
+  const location = useSyncExternalStore(subscribeLocation, getLocation, getServerLocation)
+  const separator = location.indexOf('?')
+  const pathname = separator < 0 ? location : location.slice(0, separator)
+  const urlCoupon = couponFromSearch(separator < 0 ? '' : location.slice(separator))
+  // Tracking-only changes must not reapply a coupon the shopper removed.
+  return <CheckoutSession key={`${pathname}:${urlCoupon}`} pathname={pathname} urlCoupon={urlCoupon}>{children}</CheckoutSession>
 }
 
-function CheckoutSession({ pathname, children }) {
+function CheckoutSession({ pathname, urlCoupon, children }) {
   const route = checkoutRoute(pathname)
   const [result, setResult] = useState(null)
-  const [couponInput, setCouponInput] = useState(() => {
-    if (typeof window === 'undefined') return ''
-    const query = new URLSearchParams(window.location.search)
-    return (query.get('cupom') || query.get('coupon') || query.get('coupon_code') || '').slice(0, 128)
-  })
+  const [couponInput, setCouponInput] = useState(urlCoupon)
   const [couponAppliedRevision, setCouponAppliedRevision] = useState(null)
   const [couponMessage, setCouponMessage] = useState('')
   const [notice, setNotice] = useState('')
@@ -54,6 +54,7 @@ function CheckoutSession({ pathname, children }) {
   const request = useRef(null)
   const sequence = useRef(0)
   const actionPending = useRef(false)
+  const urlCouponHandled = useRef(false)
 
   const resetApplied = useCallback(() => {
     appliedRef.current = null
@@ -82,12 +83,25 @@ function CheckoutSession({ pathname, children }) {
         setNotice('Os planos foram atualizados. Confira os valores antes de continuar.')
       }
       const next = { slug: route.slug, status: 'ready', data, checking: false }
+      // A URL can select only this page's approved offer, once per explicit intent.
+      if (!urlCouponHandled.current) {
+        urlCouponHandled.current = true
+        if (couponMatches(data, urlCoupon)) {
+          const revision = promoRevision(data)
+          appliedRef.current = revision
+          setCouponAppliedRevision(revision)
+          setCouponInput(normalizeCoupon(urlCoupon))
+          setCouponMessage('Cupom aplicado.')
+          setNotice('')
+        }
+      }
       resultRef.current = next
       setResult(next)
       return data
     } catch (error) {
       if (!active.current || id !== sequence.current || controller.signal.aborted) return null
       resetApplied()
+      setCouponMessage('')
       const failed = { slug: route.slug, status: error.code === 'not_found' ? 'not_found' : 'error', data: null, checking: false }
       resultRef.current = failed
       setResult(failed)
@@ -95,7 +109,7 @@ function CheckoutSession({ pathname, children }) {
     } finally {
       if (request.current === controller) request.current = null
     }
-  }, [route.kind, route.slug, resetApplied])
+  }, [route.kind, route.slug, resetApplied, urlCoupon])
 
   useEffect(() => {
     active.current = true
@@ -118,6 +132,7 @@ function CheckoutSession({ pathname, children }) {
   }, [route.kind, refresh])
 
   const editCoupon = value => {
+    urlCouponHandled.current = true
     editRevision.current++
     resetApplied()
     setCouponInput(value)

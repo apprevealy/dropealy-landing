@@ -28,6 +28,18 @@ export function normalizeCoupon(value) {
   return normalized.length <= 128 ? normalized : '';
 }
 
+/** Only one coupon parameter is an explicit intent; repeated aliases are ambiguous. */
+export function couponFromSearch(search) {
+  if (typeof search !== 'string') return '';
+  const values = [];
+  for (const [key, value] of new URLSearchParams(search)) {
+    if (['cupom', 'coupon', 'coupon_code'].includes(key.toLowerCase())) values.push(value);
+  }
+  if (values.length !== 1) return '';
+  const code = normalizeCoupon(values[0]);
+  return /^[A-Z0-9_-]{2,30}$/.test(code) ? code : '';
+}
+
 function isDiscountPrice(value, normal) {
   return Number.isSafeInteger(value) && value > 0 && value < normal;
 }
@@ -145,4 +157,3 @@ export async function fetchPublishedPromo(slug, {
     signal?.removeEventListener('abort', cancel);
   }
 }
-
