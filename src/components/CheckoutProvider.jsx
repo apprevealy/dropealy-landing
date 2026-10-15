@@ -218,12 +218,44 @@ export function usePricing() {
   return { prices: publicPrices(state), normalPrices: NORMAL_PRICES, couponApplied: hasAppliedCoupon(state) }
 }
 
+function PublishedCouponCode({ code, checking }) {
+  const [copyStatus, setCopyStatus] = useState('idle')
+  const copyCode = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard indisponível')
+      await navigator.clipboard.writeText(code)
+      setCopyStatus('copied')
+    } catch {
+      setCopyStatus('error')
+    }
+  }
+  return (
+    <div className="coupon-control__promotion">
+      <div className="coupon-control__promotion-heading">
+        <div>
+          <span className="coupon-control__eyebrow">Cupom promocional</span>
+          <code className="coupon-control__code">{code}</code>
+        </div>
+        <button type="button" className="coupon-control__copy" onClick={() => void copyCode()} disabled={checking}>
+          {copyStatus === 'copied' ? 'Copiado!' : 'Copiar cupom'}
+        </button>
+      </div>
+      <p className="coupon-control__copy-message" role="status" aria-live="polite">
+        {copyStatus === 'copied' ? 'Cupom copiado. Cole no campo abaixo e clique em Aplicar cupom.'
+          : copyStatus === 'error' ? 'Não foi possível copiar. Selecione o código acima e copie manualmente.'
+            : 'Copie o código e aplique abaixo para ver os valores promocionais.'}
+      </p>
+    </div>
+  )
+}
+
 export function CouponControl() {
   const state = useContext(CheckoutContext)
   if (!state) throw new Error('CheckoutProvider não configurado.')
   if (state.route.kind !== 'partner' || state.status !== 'ready' || !couponIsAvailable(state.data)) return null
   return (
     <form className="coupon-control" onSubmit={state.applyCoupon}>
+      <PublishedCouponCode key={promoRevision(state.data)} code={normalizeCoupon(state.data.coupon)} checking={state.checking} />
       <label htmlFor="dropealy-coupon">Tem um cupom?</label>
       <div className="coupon-control__fields">
         <input id="dropealy-coupon" name="coupon" type="text" value={state.couponInput || ''} maxLength={128}
