@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkoutRoute, checkoutProps, checkoutMessage, hasAppliedCoupon, publicPrices, RESERVED_ROUTES } from '../src/lib/checkoutRoute.mjs';
+import { checkoutRoute, checkoutProps, checkoutMessage, hasAppliedCoupon, publicMasterPayment, publicPrices, RESERVED_ROUTES } from '../src/lib/checkoutRoute.mjs';
 import { promoRevision } from '../src/lib/promoCreator.mjs';
 const data = slug => ({ slug, checkout: { starter: `https://checkout.perfectpay.com.br/pay/${slug}?ref=a`, trial: 'https://checkout.centerpag.com/pay/TRIAL?', master: 'https://checkout.centerpag.com/pay/MASTER?' } });
 const state = slug => ({ route: checkoutRoute(`/${slug}`), status: 'ready', data: data(slug) });
@@ -94,6 +94,42 @@ function assertNormalPartner(current) {
 
 test('oferta configurada mantém preços e links próprios normais até aplicar o cupom', () => {
   assertNormalPartner(couponState());
+});
+
+test('parcelamento promocional usa o valor aprovado e nunca divide o valor à vista', () => {
+  const current = appliedCouponState();
+  current.data.offer.discount.master_installment_cents = 2990;
+  current.couponAppliedRevision = promoRevision(current.data);
+  assert.deepEqual(publicMasterPayment(current), { installmentCount: 12, installmentCents: 2990, totalCents: 35880 });
+  assert.notEqual(publicMasterPayment(current).installmentCents, Math.round(current.data.offer.discount.master_cents / 12));
+  current.data.offer.discount.master_installment_cents = 3790;
+  current.couponAppliedRevision = promoRevision(current.data);
+  assert.deepEqual(publicMasterPayment(current), { installmentCount: 12, installmentCents: 3790, totalCents: 45480 });
+});
+
+test('parcelas ausentes ou nulas preservam a oferta legada à vista sem inventar juros', () => {
+  for (const value of [undefined, null]) {
+    const current = appliedCouponState();
+    if (value === null) current.data.offer.discount.master_installment_cents = null;
+    current.couponAppliedRevision = promoRevision(current.data);
+    assert.deepEqual(publicMasterPayment(current), { installmentCount: 12, installmentCents: null, totalCents: null });
+    assert.deepEqual(publicPrices(current), { trial: 19700, master: 39700 });
+  }
+});
+
+test('parcelamento normal permanece 12x49,90 sem cupom, após remoção, revogação e troca de revisão', () => {
+  const normal = { installmentCount: 12, installmentCents: 4990, totalCents: 59880 };
+  assert.deepEqual(publicMasterPayment({ route: checkoutRoute('/'), status: 'home' }), normal);
+  const current = appliedCouponState();
+  current.data.offer.discount.master_installment_cents = 2990;
+  // A new approved installment changes the revision and invalidates the prior applied coupon.
+  assert.deepEqual(publicMasterPayment(current), normal);
+  current.couponAppliedRevision = promoRevision(current.data);
+  delete current.couponAppliedRevision;
+  assert.deepEqual(publicMasterPayment(current), normal);
+  current.data.offer.coupon_enabled = false;
+  current.couponAppliedRevision = promoRevision(current.data);
+  assert.deepEqual(publicMasterPayment(current), normal);
 });
 
 test('cupom aplicado usa preços e URLs promocionais exatos e bloqueia Starter', () => {

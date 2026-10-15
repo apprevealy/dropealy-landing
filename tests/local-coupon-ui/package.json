@@ -1,0 +1,7 @@
+{
+  "name": "dropealy-landing-coupon-ui-validation",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test check-ui.mjs" },
+  "devDependencies": { "happy-dom": "20.14.5" }
+}

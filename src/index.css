@@ -681,6 +681,7 @@ body {
 
 .pricing-card__price--master span { font-size: 23px; }
 .pricing-card__price--master strong { color: #ffeb78; }
+.pricing-card__price--master.pricing-card__price--promotional strong { color: #4ade80; }
 
 .pricing-card__original {
   margin: 0 0 8px;

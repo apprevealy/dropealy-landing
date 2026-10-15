@@ -1,4 +1,5 @@
 import { couponIsAvailable, isValidSlug, NORMAL_PRICES, promoRevision } from './promoCreator.mjs';
+import { COMMERCIAL_PLANS } from './commercialPlans.mjs';
 
 export const RESERVED_ROUTES = new Set([
   'api', 'assets', 'monitor', 'admin', 'login', 'logout', 'suporte',
@@ -32,6 +33,18 @@ export function publicPrices(state) {
   return hasAppliedCoupon(state)
     ? { trial: state.data.offer.discount.trial_cents, master: state.data.offer.discount.master_cents }
     : NORMAL_PRICES;
+}
+
+/** Installments come only from the approved checkout, never from dividing its cash price. */
+export function publicMasterPayment(state) {
+  const installmentCents = hasAppliedCoupon(state)
+    ? state.data.offer.discount.master_installment_cents ?? null
+    : COMMERCIAL_PLANS.master.installmentCents;
+  return {
+    installmentCount: COMMERCIAL_PLANS.master.installmentCount,
+    installmentCents,
+    totalCents: installmentCents === null ? null : installmentCents * COMMERCIAL_PLANS.master.installmentCount,
+  };
 }
 
 // O destino original só existe na página inicial; nunca é fallback de um parceiro.

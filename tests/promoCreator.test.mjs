@@ -108,6 +108,24 @@ test('valida a oferta aprovada preservando centavos e URLs promocionais sem rees
   assert.equal(validated.offer.discount.checkout.master, data.offer.discount.checkout.master);
 });
 
+test('parcela opcional preserva valores reais aprovados e compatibilidade de ofertas antigas', () => {
+  for (const value of [null, 1, 2990, 3790, 4989]) {
+    const data = configured();
+    data.offer.discount.master_installment_cents = value;
+    assert.deepEqual(validatePublishedPromo(data, data.slug), data);
+  }
+  const legacy = configured();
+  assert.equal(Object.hasOwn(validatePublishedPromo(legacy, legacy.slug).offer.discount, 'master_installment_cents'), false);
+});
+
+test('parcela inválida nunca chega à vitrine como se fosse uma oferta aprovada', () => {
+  for (const value of [0, -1, 1.5, 4990, 5990, '2990', undefined, NaN, Infinity, Number.MAX_SAFE_INTEGER]) {
+    const data = configured();
+    data.offer.discount.master_installment_cents = value;
+    assert.throws(() => validatePublishedPromo(data, data.slug), { code: 'invalid_response' }, String(value));
+  }
+});
+
 test('nova oferta publicada permite Starter nulo e exige Trial e Master normais', () => {
   for (const mode of ['standard', 'coupon']) {
     const data = configured();

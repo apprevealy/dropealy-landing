@@ -59,6 +59,8 @@ function validateOffer(offer, coupon) {
       typeof discount?.ready !== 'boolean' ||
       !(discount.trial_cents === null || isDiscountPrice(discount.trial_cents, NORMAL_PRICES.trial)) ||
       !(discount.master_cents === null || isDiscountPrice(discount.master_cents, NORMAL_PRICES.master)) ||
+      (Object.hasOwn(discount, 'master_installment_cents') && discount.master_installment_cents !== null &&
+        !isDiscountPrice(discount.master_installment_cents, COMMERCIAL_PLANS.master.installmentCents)) ||
       !(discount.checkout?.trial === null || isAllowedCheckout(discount.checkout?.trial)) ||
       !(discount.checkout?.master === null || isAllowedCheckout(discount.checkout?.master)) ||
       (discount.ready && !completeDiscount(offer, coupon))) {
@@ -69,6 +71,7 @@ function validateOffer(offer, coupon) {
     normal: { trial_cents: NORMAL_PRICES.trial, master_cents: NORMAL_PRICES.master },
     discount: {
       ready: discount.ready, trial_cents: discount.trial_cents, master_cents: discount.master_cents,
+      ...(Object.hasOwn(discount, 'master_installment_cents') ? { master_installment_cents: discount.master_installment_cents } : {}),
       checkout: { trial: discount.checkout.trial, master: discount.checkout.master },
     },
   };

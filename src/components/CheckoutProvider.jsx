@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { couponFromSearch, couponIsAvailable, couponMatches, fetchPublishedPromo, normalizeCoupon, NORMAL_PRICES, promoRevision } from '../lib/promoCreator.mjs'
-import { checkoutMessage, checkoutProps, checkoutRoute, hasAppliedCoupon, publicPrices } from '../lib/checkoutRoute.mjs'
+import { checkoutMessage, checkoutProps, checkoutRoute, hasAppliedCoupon, publicMasterPayment, publicPrices } from '../lib/checkoutRoute.mjs'
 
 export const CheckoutContext = createContext(null)
 const LOCATION_EVENT = 'dropealy:location-change'
@@ -93,6 +93,10 @@ function CheckoutSession({ pathname, urlCoupon, children }) {
           setCouponInput(normalizeCoupon(urlCoupon))
           setCouponMessage('Cupom aplicado.')
           setNotice('')
+        } else if (urlCoupon) {
+          setNotice(couponIsAvailable(data)
+            ? 'O cupom informado não é válido para esta página. Os valores normais foram mantidos.'
+            : 'O cupom não está disponível nesta página. Os valores normais foram mantidos.')
         }
       }
       resultRef.current = next
@@ -230,7 +234,7 @@ export function useCheckout() {
 export function usePricing() {
   const state = useContext(CheckoutContext)
   if (!state) throw new Error('CheckoutProvider não configurado.')
-  return { prices: publicPrices(state), normalPrices: NORMAL_PRICES, couponApplied: hasAppliedCoupon(state) }
+  return { prices: publicPrices(state), normalPrices: NORMAL_PRICES, couponApplied: hasAppliedCoupon(state), masterPayment: publicMasterPayment(state) }
 }
 
 function PublishedCouponCode({ code, checking }) {
