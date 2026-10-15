@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { checkoutProps, checkoutRoute, publicPrices } from '../src/lib/checkoutRoute.mjs';
 import {
-  couponIsAvailable, couponMatches, fetchPublishedPromo, isAllowedCheckout, isValidSlug,
+  couponFromSearch, couponIsAvailable, couponMatches, fetchPublishedPromo, isAllowedCheckout, isValidSlug,
   normalizeCoupon, promoRevision, validatePublishedPromo,
 } from '../src/lib/promoCreator.mjs';
 
@@ -25,6 +25,33 @@ const configured = (slug = 'parceiro-a') => ({
       },
     },
   },
+});
+
+test('lê CUPOM e aliases sem diferenciar maiúsculas e normaliza apenas o código', () => {
+  for (const key of ['CUPOM', 'cupom', 'CuPoM', 'coupon', 'COUPON_CODE']) {
+    assert.equal(couponFromSearch(`?ref=a%2Fb&${key}=%20presente50%20&src=x+y`), 'PRESENTE50');
+  }
+  assert.equal(couponFromSearch('?CUPOM=OUTRO_10'), 'OUTRO_10');
+  assert.equal(couponFromSearch('?CUPOM=OFERTA-10'), 'OFERTA-10');
+});
+
+test('ausência, valor inválido ou parâmetros repetidos/ambíguos não indicam cupom', () => {
+  for (const search of ['', '?ref=PRESENTE50', '?CUPOM=', '?CUPOM=+', '?CUPOM=A',
+    '?CUPOM=DOIS+CODIGOS', '?CUPOM=%3Cscript%3E', `?CUPOM=${'A'.repeat(31)}`,
+    '?CUPOM=%E0%A4%A', '?CUPOM=PRESENTE50&CUPOM=PRESENTE50',
+    '?CUPOM=PRESENTE50&cupom=OUTRO', '?coupon=PRESENTE50&coupon_code=PRESENTE50',
+    '?CUPOM=PRESENTE50&coupon=', null, undefined, {}]) {
+    assert.equal(couponFromSearch(search), '', String(search));
+  }
+});
+
+test('cupom da URL não concede preço, permissão nem substitui código aprovado', () => {
+  const data = configured();
+  assert.equal(couponMatches(data, couponFromSearch('?CUPOM=PRESENTE50&trial_cents=1&master_cents=1')), true);
+  assert.deepEqual(publicPrices({ route: checkoutRoute(`/${data.slug}`), status: 'ready', data }), { trial: 24700, master: 49700 });
+  assert.equal(couponMatches(data, couponFromSearch('?CUPOM=OUTRO')), false);
+  data.offer.coupon_enabled = false;
+  assert.equal(couponMatches(data, couponFromSearch('?CUPOM=PRESENTE50')), false);
 });
 
 test('valida formato e limites do slug', () => {
@@ -294,4 +321,3 @@ test('cancelamento do navegador não consulta nem reaproveita links', async () =
   }), { name: 'AbortError' });
   assert.equal(called, false);
 });
-
