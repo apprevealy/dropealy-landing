@@ -44,7 +44,7 @@ const offer = (slug = 'fornecedor') => ({
   offer: {
     mode: 'coupon', coupon_enabled: true,
     normal: { trial_cents: 24700, master_cents: 49700 },
-    discount: { ready: true, trial_cents: 19700, master_cents: 39700, master_installment_cents: 3790,
+    discount: { ready: true, trial_cents: 19700, master_cents: 29700, master_installment_cents: 3790,
       checkout: { trial: checkout(`${slug}_TD`), master: checkout(`${slug}_MD`) } },
   },
 });
@@ -65,7 +65,7 @@ const discounted = (expected = 'R$ 37,90') => {
   assert.equal(price().querySelector('span').textContent, '12x de');
   assert.equal(price().querySelector('strong').textContent, expected);
   assert.equal(price().classList.contains('pricing-card__price--promotional'), true);
-  assert.match(normalized(master()), /ou R\$ 397 à vista/);
+  assert.match(normalized(master()), /ou R\$ 297 à vista/);
   assert.match(normalized(trial()), /R\$ 197/);
 };
 const navigate = async url => { await act(async () => win.history.pushState({}, '', url)); await flush(); };
@@ -80,6 +80,22 @@ const clickText = async text => {
   assert.ok(button, `Botão ${text} presente`);
   await act(async () => button.dispatchEvent(new win.MouseEvent('click', { bubbles: true })));
   await flush();
+};
+const couponForm = () => host.querySelector('form.coupon-control');
+const couponToggle = () => [...host.querySelectorAll('button')].find(item => /tem um cupom ou indica[çc][ãa]o/i.test(normalized(item)));
+const openCoupon = async () => {
+  const toggle = couponToggle();
+  assert.ok(toggle, 'Botão para informar cupom ou indicação presente');
+  await act(async () => toggle.dispatchEvent(new win.MouseEvent('click', { bubbles: true })));
+  await flush();
+};
+const submitCoupon = async () => {
+  await act(async () => couponForm().dispatchEvent(new win.Event('submit', { bubbles: true, cancelable: true })));
+  await flush();
+};
+const assertNormalLinks = (slug = 'fornecedor') => {
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout(`${slug}_M`));
+  assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout(`${slug}_T`));
 };
 const setInput = async value => {
   const input = host.querySelector('#dropealy-coupon');
@@ -125,6 +141,8 @@ test('URL válida aplica a oferta aprovada e mostra parcelas reais no cartão Ma
   assert.match(normalized(master()), /Total no parcelamento: R\$ 454,80/);
   assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
   assert.match(host.textContent, /Cupom aplicado/);
+  assert.equal(couponToggle().getAttribute('aria-expanded'), 'true');
+  assert.equal(couponForm().hidden, false);
   assert.ok(fetches.every(item => item.options.credentials === 'omit' && item.options.cache === 'no-store'));
 });
 
@@ -138,13 +156,22 @@ test('valor da parcela segue a configuração publicada, sem fixar o exemplo 29,
 test('sem parâmetro mantém os preços normais; aplicar e remover restaura os links normais', async () => {
   await mount('/fornecedor');
   normal();
+  assertNormalLinks();
+  assert.equal(couponToggle().getAttribute('aria-expanded'), 'false');
+  assert.equal(couponForm().hidden, true);
+  assert.equal(couponToggle().getAttribute('aria-controls'), couponForm().id);
+  assert.ok(couponForm().id);
+  await openCoupon();
+  assert.equal(couponToggle().getAttribute('aria-expanded'), 'true');
+  assert.equal(couponForm().hidden, false);
   await setInput('presente50');
-  await act(async () => host.querySelector('.coupon-control').dispatchEvent(new win.Event('submit', { bubbles: true, cancelable: true })));
-  await flush();
+  await submitCoupon();
   discounted();
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
+  assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD'));
   await clickText('Remover');
   normal();
-  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_M'));
+  assertNormalLinks();
 });
 
 test('remover não é desfeito por parâmetros de rastreamento; nova intenção explícita reaplica', async () => {
@@ -160,12 +187,21 @@ test('remover não é desfeito por parâmetros de rastreamento; nova intenção 
   discounted();
 });
 
-test('modo padrão e permissão desativada não concedem desconto e explicam o parâmetro indisponível', async () => {
+test('modo padrão com identificador publicado mostra o campo sem habilitar desconto', async () => {
   current.offer.mode = 'standard';
   current.offer.coupon_enabled = false;
   await mount();
   normal();
-  assert.equal(host.querySelector('.coupon-control'), null);
+  assert.ok(couponToggle());
+  assertNormalLinks();
+  if (couponForm().hidden) await openCoupon();
+  assert.equal(host.querySelector('#dropealy-coupon').disabled, true);
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
+  await setInput('PRESENTE50');
+  await submitCoupon();
+  normal();
+  assertNormalLinks();
+  assert.match(normalized(couponForm()), /cupom.*(?:não.*ativ|indisponível)/i);
   assert.match(host.textContent, /cupom não está disponível nesta página/);
   assert.match(host.textContent, /valores normais foram mantidos/);
 });
@@ -181,7 +217,7 @@ test('oferta antiga à vista continua válida sem inventar parcelamento', async 
   delete current.offer.discount.master_installment_cents;
   await mount();
   assert.equal(price().querySelector('span'), null);
-  assert.equal(price().querySelector('strong').textContent, 'R$ 397');
+  assert.equal(price().querySelector('strong').textContent, 'R$ 297');
   assert.equal(price().classList.contains('pricing-card__price--promotional'), true);
   assert.match(normalized(master()), /À vista · Acesso vitalício/);
   assert.doesNotMatch(normalized(master()), /Total no parcelamento/);
@@ -236,9 +272,102 @@ test('falha ao reconferir bloqueia a compra e não preserva o desconto antigo', 
   assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('aria-disabled'), 'true');
 });
 
+
+test('fechar e reabrir preserva o campo e o cupom aplicado sem trocar os checkouts', async () => {
+  await mount();
+  const form = couponForm();
+  const input = host.querySelector('#dropealy-coupon');
+  discounted();
+  await openCoupon();
+  assert.equal(couponToggle().getAttribute('aria-expanded'), 'false');
+  assert.equal(couponForm(), form);
+  assert.equal(couponForm().hidden, true);
+  await openCoupon();
+  assert.equal(couponForm(), form);
+  assert.equal(host.querySelector('#dropealy-coupon'), input);
+  assert.equal(input.value, 'PRESENTE50');
+  discounted();
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
+});
+
+test('cupom manual aprovado com preços de 197 e 297 à vista não inventa parcelas', async () => {
+  current.offer.discount.master_installment_cents = null;
+  await mount('/fornecedor');
+  normal();
+  await openCoupon();
+  await setInput('  presente50  ');
+  await submitCoupon();
+  assert.equal(price().querySelector('span'), null);
+  assert.equal(price().querySelector('strong').textContent, 'R$ 297');
+  assert.match(normalized(trial()), /R\$ 197/);
+  assert.doesNotMatch(normalized(master()), /Total no parcelamento/);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
+  assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD'));
+  await clickText('Remover');
+  normal();
+  assertNormalLinks();
+});
+
+test('cupom inválido não altera preços nem destinos do parceiro', async () => {
+  await mount('/fornecedor?CUPOM=INVALIDO');
+  normal();
+  assertNormalLinks();
+  assert.match(host.textContent, /cupom informado não é válido/);
+  if (couponForm().hidden) await openCoupon();
+  await setInput('INVALIDO');
+  await submitCoupon();
+  normal();
+  assertNormalLinks();
+  assert.match(normalized(couponForm()), /cupom não é válido/);
+});
+
+test('ofc antigo com cupom publicado exibe o botão, porém não autoriza oferta promocional', async () => {
+  current = offer('ofc');
+  delete current.offer;
+  current.checkout.starter = checkout('ofc_S');
+  await mount('/ofc');
+  normal();
+  assertNormalLinks('ofc');
+  assert.equal(couponToggle().getAttribute('aria-expanded'), 'false');
+  await openCoupon();
+  assert.equal(couponForm().hidden, false);
+  assert.equal(host.querySelector('#dropealy-coupon').disabled, true);
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
+  await setInput('PRESENTE50');
+  await submitCoupon();
+  normal();
+  assertNormalLinks('ofc');
+});
+
+test('permissão desligada em modo cupom não habilita aplicar nem altera preço via URL', async () => {
+  current.offer.coupon_enabled = false;
+  await mount();
+  normal();
+  assertNormalLinks();
+  if (couponForm().hidden) await openCoupon();
+  assert.equal(host.querySelector('#dropealy-coupon').disabled, true);
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
+  await submitCoupon();
+  normal();
+  assertNormalLinks();
+});
+
+test('página padrão sem identificador publicado não mostra controle de cupom', async () => {
+  current.offer.mode = 'standard';
+  current.offer.coupon_enabled = false;
+  current.coupon = null;
+  current.offer.discount = { ready: false, trial_cents: null, master_cents: null, checkout: { trial: null, master: null } };
+  await mount('/fornecedor');
+  normal();
+  assertNormalLinks();
+  assert.equal(couponToggle(), undefined);
+  assert.equal(couponForm(), null);
+});
+
 test('CSS mantém o prefixo branco e só muda para verde o valor promocional do Master', () => {
   const css = readFileSync(path.join(rootPath, 'src/index.css'), 'utf8');
   assert.match(css, /\.pricing-card__price span\s*\{[^}]*color:\s*#fff;/);
   assert.match(css, /\.pricing-card__price--master strong\s*\{\s*color:\s*#ffeb78;/);
   assert.match(css, /\.pricing-card__price--master\.pricing-card__price--promotional strong\s*\{\s*color:\s*#4ade80;/);
 });
+

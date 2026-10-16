@@ -1,6 +1,7 @@
 // Testes reais de navegador, com servidor local e configurações de parceiros simuladas.
 // Nenhuma compra, gravação no painel ou requisição externa é permitida neste teste.
-import { chromium } from 'playwright';
+import { createRequire } from 'node:module';
+const { chromium } = createRequire(import.meta.url)('playwright');
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -35,7 +36,7 @@ function couponPublished(slug, version = 1) {
 }
 async function waitOffer(page, data, discounted = false) {
   const links = discounted ? data.offer.discount.checkout : data.checkout;
-  const prices = discounted ? ['R$ 197,89', 'R$ 397,45'] : ['R$ 247', 'R$ 497'];
+  const prices = discounted ? ['R$ 197,89', 'R$ 397,45'] : ['R$ 247', 'R$ 49,90'];
   await page.waitForFunction(({ links, prices, discounted }) => {
     const cards = [...document.querySelectorAll('#planos .pricing-card')];
     return cards.length === 2 && cards.every((card, i) => {
@@ -45,11 +46,16 @@ async function waitOffer(page, data, discounted = false) {
     }) && document.querySelectorAll('#planos .pricing-card__original s').length === (discounted ? 2 : 0);
   }, { links, prices, discounted });
 }
+async function showCoupon(page) {
+  const toggle = page.getByRole('button', { name: 'TEM UM CUPOM OU INDICAÇÃO?', exact: true });
+  if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
+}
 async function applyCoupon(page, data, input = '  cupom_simulado  ') {
-  await page.getByLabel('Tem um cupom?', { exact: true }).fill(input);
+  await showCoupon(page);
+  await page.getByLabel('Cupom de indicação', { exact: true }).fill(input);
   await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).click();
   await waitOffer(page, data, true);
-  assert.equal(await page.getByLabel('Tem um cupom?', { exact: true }).inputValue(), 'CUPOM_SIMULADO');
+  assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), 'CUPOM_SIMULADO');
   assert.equal(await page.locator('#dropealy-coupon-message').textContent(), 'Cupom aplicado.');
 }
 async function captureNavigation(page) {
@@ -66,6 +72,7 @@ async function waitReady(page, slug, version = 1) {
 async function cardStructure(page) {
   return page.locator('#planos').evaluate(el => {
     const clone = el.cloneNode(true);
+    clone.querySelectorAll('.coupon-entry, [role="status"]').forEach(el => el.remove());
     clone.querySelectorAll('a').forEach(a => ['href', 'data-checkout-plan', 'aria-disabled', 'tabindex', 'title'].forEach(attr => a.removeAttribute(attr)));
     return clone.outerHTML;
   });
@@ -227,42 +234,45 @@ try {
       await record(`${label}: ${slug} permanece padrão mesmo com cupom na URL`, async () => {
         await page.goto(`${origin}/${slug}?cupom=CUPOM_SIMULADO`, { waitUntil: 'domcontentloaded' });
         await waitOffer(page, configs.get(slug));
-        assert.equal(await page.locator('.coupon-control').count(), 0);
+        await showCoupon(page);
+        assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).isDisabled(), true);
+        assert.equal(await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).isDisabled(), true);
         assert.equal(await cardStructure(page), baseline);
         await assertPlanLayout(page, viewport);
       });
     }
-    await record(`${label}: query apenas preenche; aplicação explícita aceita maiúsculas e minúsculas`, async () => {
+    await record(`${label}: query válida abre o campo e aplica a oferta aprovada sem navegação`, async () => {
       const data = configs.get('cupom-ativo');
       for (const parameter of ['cupom', 'coupon', 'coupon_code']) {
         await page.goto(`${origin}/cupom-ativo?${parameter}=cupom_simulado`, { waitUntil: 'domcontentloaded' });
-        await waitOffer(page, data);
-        assert.equal(await page.getByLabel('Tem um cupom?', { exact: true }).inputValue(), 'cupom_simulado');
-        assert.equal(await page.locator('#planos .pricing-card__original').count(), 0);
-        await applyCoupon(page, data);
+        await waitOffer(page, data, true);
+        assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), 'CUPOM_SIMULADO');
+        assert.equal(await page.getByRole('button', { name: 'TEM UM CUPOM OU INDICAÇÃO?', exact: true }).getAttribute('aria-expanded'), 'true');
+        assert.equal(await page.locator('#planos .pricing-card__original').count(), 2);
         await assertPlanLayout(page, viewport);
         assert.deepEqual((await captureNavigation(page)).navigations, []);
       }
       await page.locator('.coupon-control').screenshot({ path: `${output}/${label}-cupom-aplicado-controle.png`, animations: 'disabled' });
       await page.locator('#planos').screenshot({ path: `${output}/${label}-cupom-aplicado-planos.png`, animations: 'disabled' });
       await page.reload({ waitUntil: 'domcontentloaded' });
-      await waitOffer(page, data);
+      await waitOffer(page, data, true);
     });
     await record(`${label}: cupom inválido, edição e remoção mantêm ou restauram a oferta normal`, async () => {
       const data = configs.get('cupom-ativo');
       await page.goto(`${origin}/cupom-ativo`, { waitUntil: 'domcontentloaded' });
       await waitOffer(page, data);
-      await page.getByLabel('Tem um cupom?', { exact: true }).fill('OUTRO_CUPOM');
+      await showCoupon(page);
+      await page.getByLabel('Cupom de indicação', { exact: true }).fill('OUTRO_CUPOM');
       await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).click();
       await page.waitForFunction(() => document.querySelector('#dropealy-coupon-message')?.textContent.includes('não é válido'));
       await waitOffer(page, data);
       await applyCoupon(page, data);
-      await page.getByLabel('Tem um cupom?', { exact: true }).fill('CUPOM_EDITADO');
+      await page.getByLabel('Cupom de indicação', { exact: true }).fill('CUPOM_EDITADO');
       await waitOffer(page, data);
       await applyCoupon(page, data);
       await page.getByRole('button', { name: 'Remover', exact: true }).click();
       await waitOffer(page, data);
-      assert.equal(await page.getByLabel('Tem um cupom?', { exact: true }).inputValue(), '');
+      assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), '');
       assert.equal(await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).isDisabled(), true);
       assert.equal(await page.getByRole('button', { name: 'Remover', exact: true }).count(), 0);
       assert.deepEqual((await captureNavigation(page)).navigations, []);
@@ -275,9 +285,8 @@ try {
       await waitOffer(page, original);
       await applyCoupon(page, original);
       await page.evaluate(() => history.pushState(null, '', '/cupom-segundo?cupom=cupom_simulado'));
-      await waitOffer(page, next);
-      assert.equal(await page.getByLabel('Tem um cupom?', { exact: true }).inputValue(), 'cupom_simulado');
-      await applyCoupon(page, next);
+      await waitOffer(page, next, true);
+      assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), 'CUPOM_SIMULADO');
       for (const plan of ['trial', 'master']) {
         assert.equal(await page.locator(`#planos a[data-checkout-plan="${plan}"]`).getAttribute('href'), next.offer.discount.checkout[plan]);
         assert.notEqual(next.offer.discount.checkout[plan], original.offer.discount.checkout[plan]);
@@ -290,7 +299,8 @@ try {
         configs.set('cupom-ativo', original);
         await page.goto(`${origin}/cupom-ativo`, { waitUntil: 'domcontentloaded' });
         await waitOffer(page, original);
-        await page.getByLabel('Tem um cupom?', { exact: true }).fill('cupom_simulado');
+        await showCoupon(page);
+        await page.getByLabel('Cupom de indicação', { exact: true }).fill('cupom_simulado');
         const changed = structuredClone(original);
         if (revoke === 'versao') changed.version += 1;
         else changed.offer.coupon_enabled = false;
@@ -300,8 +310,8 @@ try {
         await page.getByRole('status').filter({ hasText: 'Os planos foram atualizados' }).waitFor();
         await waitOffer(page, changed);
         assert.ok(apiCalls.length > before, 'Aplicar deve consultar a publicação atual.');
-        if (revoke === 'versao') assert.equal(await page.getByLabel('Tem um cupom?', { exact: true }).inputValue(), '');
-        else assert.equal(await page.locator('.coupon-control').count(), 0);
+        if (revoke === 'versao') assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), '');
+        else assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).isDisabled(), true);
         assert.deepEqual((await captureNavigation(page)).navigations, []);
       });
     }
@@ -325,8 +335,8 @@ try {
         await page.getByRole('status').filter({ hasText: 'Os planos foram atualizados' }).waitFor();
         await waitOffer(page, changed);
         assert.ok(apiCalls.length > before, 'A reconferência deve consultar a configuração pública atual.');
-        if (trigger === 'visibilitychange') assert.equal(await page.locator('.coupon-control').count(), 0);
-        else assert.equal(await page.getByLabel('Tem um cupom?', { exact: true }).inputValue(), '');
+        if (trigger === 'visibilitychange') assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).isDisabled(), true);
+        else assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), '');
       });
     }
     await record(`${label}: reconferência pendente bloqueia navegação e preserva preços até a resposta`, async () => {
@@ -339,7 +349,7 @@ try {
       await page.evaluate(() => window.dispatchEvent(new Event('focus')));
       await assertBlocked(page);
       assert.deepEqual(await page.locator('#planos .pricing-card__price strong').allTextContents(), ['R$ 197,89', 'R$ 397,45']);
-      assert.equal(await page.getByLabel('Tem um cupom?', { exact: true }).isDisabled(), true);
+      assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).isDisabled(), true);
       assert.equal(await page.locator('#planos .pricing-card__original s').count(), 2);
       await page.locator('#planos a[data-checkout-plan="master"]').dispatchEvent('click');
       await page.locator('#planos a[data-checkout-plan="trial"]').dispatchEvent('auxclick', { button: 1 });
@@ -410,3 +420,4 @@ try {
   await browser?.close();
   server.kill('SIGTERM');
 }
+

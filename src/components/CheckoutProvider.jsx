@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { couponFromSearch, couponIsAvailable, couponMatches, fetchPublishedPromo, normalizeCoupon, NORMAL_PRICES, promoRevision } from '../lib/promoCreator.mjs'
+import { couponEntryIsVisible, couponFromSearch, couponIsAvailable, couponMatches, fetchPublishedPromo, normalizeCoupon, NORMAL_PRICES, promoRevision } from '../lib/promoCreator.mjs'
 import { checkoutMessage, checkoutProps, checkoutRoute, hasAppliedCoupon, publicMasterPayment, publicPrices } from '../lib/checkoutRoute.mjs'
 
 export const CheckoutContext = createContext(null)
@@ -271,20 +271,32 @@ function PublishedCouponCode({ code, checking }) {
 export function CouponControl() {
   const state = useContext(CheckoutContext)
   if (!state) throw new Error('CheckoutProvider não configurado.')
-  if (state.route.kind !== 'partner' || state.status !== 'ready' || !couponIsAvailable(state.data)) return null
+  const [open, setOpen] = useState(false)
+  const applied = hasAppliedCoupon(state)
+  useEffect(() => {
+    if (applied || state.couponInput) setOpen(true)
+  }, [applied, state.couponInput])
+  if (state.route.kind !== 'partner' || state.status !== 'ready' || !couponEntryIsVisible(state.data)) return null
+  const available = couponIsAvailable(state.data)
   return (
-    <form className="coupon-control" onSubmit={state.applyCoupon}>
-      <PublishedCouponCode key={promoRevision(state.data)} code={normalizeCoupon(state.data.coupon)} checking={state.checking} />
-      <label htmlFor="dropealy-coupon">Tem um cupom?</label>
-      <div className="coupon-control__fields">
-        <input id="dropealy-coupon" name="coupon" type="text" value={state.couponInput || ''} maxLength={128}
-          placeholder="Digite seu cupom" autoComplete="off" spellCheck={false} aria-describedby="dropealy-coupon-message"
-          disabled={state.checking} onChange={event => state.editCoupon(event.target.value)} />
-        <button type="submit" disabled={state.checking || !state.couponInput?.trim()}>Aplicar cupom</button>
-        {state.couponInput || hasAppliedCoupon(state) ? <button type="button" className="coupon-control__clear" onClick={() => state.editCoupon('')} disabled={state.checking}>Remover</button> : null}
-      </div>
-      <p id="dropealy-coupon-message" role="status" aria-live="polite">{state.couponMessage || (hasAppliedCoupon(state) ? 'Cupom aplicado.' : 'O desconto será exibido após aplicar um cupom válido.')}</p>
-    </form>
+    <div className="coupon-entry">
+      <button type="button" className="coupon-entry__toggle" aria-expanded={open} aria-controls="dropealy-coupon-panel" onClick={() => setOpen(value => !value)}>
+        TEM UM CUPOM OU INDICAÇÃO?
+        <svg aria-hidden="true" viewBox="0 0 20 20" width="18" height="18" className={open ? 'coupon-entry__chevron--open' : ''}><path d="m5 7.5 5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      <form id="dropealy-coupon-panel" className="coupon-control" hidden={!open} onSubmit={state.applyCoupon}>
+        {available ? <PublishedCouponCode key={promoRevision(state.data)} code={normalizeCoupon(state.data.coupon)} checking={state.checking} /> : null}
+        <label htmlFor="dropealy-coupon">Cupom de indicação</label>
+        <div className="coupon-control__fields">
+          <input id="dropealy-coupon" name="coupon" type="text" value={state.couponInput || ''} maxLength={30}
+            placeholder="Digite seu cupom de indicação" autoComplete="off" spellCheck={false} aria-describedby="dropealy-coupon-message"
+            disabled={state.checking || !available} onChange={event => state.editCoupon(event.target.value)} />
+          <button type="submit" disabled={state.checking || !available || !state.couponInput?.trim()}>Aplicar cupom</button>
+          {state.couponInput || applied ? <button type="button" className="coupon-control__clear" onClick={() => state.editCoupon('')} disabled={state.checking}>Remover</button> : null}
+        </div>
+        <p id="dropealy-coupon-message" role="status" aria-live="polite">{!available ? 'O cupom desta página ainda não está ativo. Os valores sem desconto continuam disponíveis.' : state.couponMessage || (applied ? 'Cupom aplicado.' : 'O desconto será exibido após aplicar um cupom válido.')}</p>
+      </form>
+    </div>
   )
 }
 
@@ -295,3 +307,4 @@ export function CheckoutStatus() {
   if (!message) return null
   return <p role="status" aria-live="polite" className="text-center text-white/70">{message}</p>
 }
+
