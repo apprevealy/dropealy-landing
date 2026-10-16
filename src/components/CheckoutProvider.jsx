@@ -97,7 +97,7 @@ function CheckoutSession({ pathname, urlCoupon, children }) {
           setCouponInput(normalizeCoupon(urlCoupon))
           setCouponMessage('Cupom aplicado.')
           setNotice('')
-        } else if (urlCoupon) {
+        } else if (urlCoupon && couponEntryIsVisible(data)) {
           setNotice(couponIsAvailable(data)
             ? 'O cupom informado não é válido para esta página. Os valores normais foram mantidos.'
             : 'O cupom não está disponível nesta página. Os valores normais foram mantidos.')

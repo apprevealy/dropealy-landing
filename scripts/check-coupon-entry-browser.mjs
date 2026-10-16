@@ -13,15 +13,15 @@ mkdirSync(output, { recursive: true });
 const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--host', '127.0.0.1', '--port', '4174', '--strictPort'], { stdio: 'ignore' });
 const report = { simulatedPartnerData: true, externalWrites: 0, blockedExternalRequests: 0, scenarios: [] };
 const checkout = (slug, plan, discount = false) => `https://checkout.centerpag.com/pay/${slug}_${plan}${discount ? '_D' : ''}?ref=a%2Fb&tag=1%262`;
-function published(slug, enabled = true) {
+function published(slug, enabled = true, mode = 'coupon') {
   return { slug, version: 1, status: 'published', coupon: 'PRESENTE50',
     checkout: { starter: null, trial: checkout(slug, 'T'), master: checkout(slug, 'M') },
-    offer: { mode: enabled ? 'coupon' : 'standard', coupon_enabled: enabled,
+    offer: { mode, coupon_enabled: enabled,
       normal: { trial_cents: 24700, master_cents: 49700 },
       discount: { ready: true, trial_cents: 19700, master_cents: 29700, master_installment_cents: null,
         checkout: { trial: checkout(slug, 'T', true), master: checkout(slug, 'M', true) } } } };
 }
-const configs = new Map([['parceiro', published('parceiro')], ['ofc', published('ofc', false)]]);
+const configs = new Map([['parceiro', published('parceiro')], ['ofc', published('ofc', false)], ['standard', published('standard', false, 'standard')]]);
 let browser;
 let apiCalls = 0;
 async function prices(page, slug, discounted) {
@@ -143,6 +143,14 @@ try {
       await prices(page, 'ofc', true);
       assert.ok(apiCalls > before);
       assert.equal(await page.locator('.coupon-entry__gift').count(), 1);
+    });
+    await record(`${label}: bloco 2.0 oculta controles mesmo com cupom na URL`, async () => {
+      await page.goto(`${origin}/standard?CUPOM=PRESENTE50`);
+      await prices(page, 'standard', false);
+      assert.equal(await toggle.count(), 0);
+      assert.equal(await input.count(), 0);
+      assert.equal(await page.locator('.coupon-entry__gift, .coupon-applied-bar').count(), 0);
+      assert.doesNotMatch(await page.locator('body').textContent(), /cupom não está disponível nesta página|cupom informado não é válido/i);
     });
     assert.deepEqual(errors, [], `Sem erros de execução: ${label}`);
     assert.equal(context.pages().length, 1);

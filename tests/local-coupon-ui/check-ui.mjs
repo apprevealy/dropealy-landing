@@ -87,6 +87,14 @@ const clickText = async text => {
 };
 const couponForm = () => host.querySelector('form.coupon-control');
 const couponGift = () => host.querySelector('.coupon-entry__gift');
+const assertCouponHidden = () => {
+  assert.equal(host.querySelector('.coupon-entry'), null);
+  assert.equal(couponToggle(), undefined);
+  assert.equal(couponForm(), null);
+  assert.equal(host.querySelector('#dropealy-coupon'), null);
+  assert.equal(couponGift(), null);
+  assert.equal(host.querySelector('.coupon-applied-bar'), null);
+};
 const couponToggle = () => [...host.querySelectorAll('button')].find(item => /tem um cupom ou indica[çc][ãa]o/i.test(normalized(item)));
 const openCoupon = async () => {
   const toggle = couponToggle();
@@ -172,7 +180,7 @@ test('parcela aprovada 29,82 mostra 12x, total 357,84 e opção à vista 297 no 
   assert.equal(normalized(header.children[0]), '12x de');
   assert.equal(normalized(header.children[1]), 'R$ 29,82');
   const detail = master().querySelector('.pricing-card__detail');
-  assert.match(normalized(detail), /^ou R\$ 297 à vista\s*[•·]\s*Acesso vitalício/);
+  assert.match(normalized(detail), /^ou R\$ 297 à vista\s*[•·]\s*vitalício/);
   assert.equal(normalized(detail.querySelector('s')), 'R$ 497');
   assert.equal(detail.querySelector('s').getAttribute('aria-label'), 'Valor sem cupom: R$ 497');
   assert.match(normalized(master()), /Total no parcelamento: R\$ 357,84/);
@@ -223,26 +231,14 @@ test('remover não é desfeito por parâmetros de rastreamento; nova intenção 
   discounted();
 });
 
-test('modo padrão com identificador publicado mostra o campo sem habilitar desconto', async () => {
+test('bloco 2.0 oculta toda a entrada de cupom mesmo com identificador publicado e CUPOM na URL', async () => {
   current.offer.mode = 'standard';
   current.offer.coupon_enabled = false;
   await mount();
   normal();
   assertNormalLinks();
-  if (!couponForm() || couponForm().hidden) await openCoupon();
-  assert.equal(couponGift(), null);
-  assert.equal(host.querySelector('#dropealy-coupon').disabled, false);
-  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, !host.querySelector('#dropealy-coupon').value);
-  await setInput('PRESENTE50');
-  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, false);
-  const before = fetches.length;
-  await submitCoupon();
-  assert.ok(fetches.length > before, 'APLICAR reconfere a oferta mesmo quando carregou inativa');
-  normal();
-  assertNormalLinks();
-  assert.match(normalized(couponForm()), /cupom.*(?:não.*ativ|indisponível)/i);
-  assert.match(host.textContent, /cupom não está disponível nesta página/);
-  assert.match(host.textContent, /valores normais foram mantidos/);
+  assertCouponHidden();
+  assert.doesNotMatch(host.textContent, /cupom não está disponível nesta página|cupom informado não é válido|valores normais foram mantidos/i);
 });
 
 test('home ignora cupom e mantém o preço normal', async () => {
@@ -374,26 +370,15 @@ test('cupom inválido não altera preços nem destinos do parceiro', async () =>
   assert.equal(couponGift(), null);
 });
 
-test('ofc antigo com cupom publicado exibe o botão, porém não autoriza oferta promocional', async () => {
+test('ofc legado sem bloco 2.1 oculta o cupom publicado inclusive quando aparece na URL', async () => {
   current = offer('ofc');
   delete current.offer;
   current.checkout.starter = checkout('ofc_S');
-  await mount('/ofc');
+  await mount('/ofc?CUPOM=PRESENTE50');
   normal();
   assertNormalLinks('ofc');
-  assert.equal(couponToggle().getAttribute('aria-expanded'), 'false');
-  await openCoupon();
-  assert.equal(couponForm().hidden, false);
-  assert.equal(couponGift(), null);
-  assert.equal(host.querySelector('#dropealy-coupon').disabled, false);
-  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, !host.querySelector('#dropealy-coupon').value);
-  await setInput('PRESENTE50');
-  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, false);
-  const before = fetches.length;
-  await submitCoupon();
-  assert.ok(fetches.length > before, 'APLICAR reconfere a oferta mesmo quando carregou inativa');
-  normal();
-  assertNormalLinks('ofc');
+  assertCouponHidden();
+  assert.doesNotMatch(host.textContent, /cupom não está disponível nesta página|cupom informado não é válido|valores normais foram mantidos/i);
 });
 
 test('permissão desligada aceita digitar e aplicar, sem alterar preço via URL nem criar presente', async () => {
@@ -475,6 +460,31 @@ test('editar durante APLICAR impede que a resposta aprove o código antigo', asy
   assert.equal(couponGift(), null);
   normal();
   assertNormalLinks();
+});
+
+test('trocar publicação de bloco 2.1 para 2.0 remove entrada, presente e barra e restaura preços', async () => {
+  await mount();
+  discounted();
+  current.offer.mode = 'standard';
+  current.offer.coupon_enabled = false;
+  await act(async () => win.dispatchEvent(new win.Event('focus')));
+  await flush();
+  normal();
+  assertNormalLinks();
+  assertCouponHidden();
+});
+
+test('navegar para parceiro no bloco 2.0 não reaproveita entrada nem cupom do anterior', async () => {
+  await mount();
+  discounted();
+  current = offer('outro-parceiro');
+  current.offer.mode = 'standard';
+  current.offer.coupon_enabled = false;
+  await navigate('/outro-parceiro?CUPOM=PRESENTE50');
+  normal();
+  assertNormalLinks('outro-parceiro');
+  assertCouponHidden();
+  assert.doesNotMatch(host.textContent, /cupom não está disponível nesta página|cupom informado não é válido|valores normais foram mantidos/i);
 });
 
 test('página padrão sem identificador publicado não mostra controle de cupom', async () => {

@@ -82,9 +82,9 @@ export function couponIsAvailable(data) {
   return data?.offer?.mode === 'coupon' && data.offer.coupon_enabled === true && completeDiscount(data.offer, data.coupon);
 }
 
-/** A published identifier may expose the entry UI, never unlock a discount. */
+/** Only the published block 2.1 exposes coupon entry; a saved code alone is not a mode. */
 export function couponEntryIsVisible(data) {
-  return couponIsAvailable(data) || /^[A-Z0-9][A-Z0-9_-]{1,28}[A-Z0-9]$/.test(normalizeCoupon(data?.coupon));
+  return data?.offer?.mode === 'coupon';
 }
 
 export function couponMatches(data, input) {

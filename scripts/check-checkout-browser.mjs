@@ -234,14 +234,19 @@ try {
       await record(`${label}: ${slug} permanece padrão mesmo com cupom na URL`, async () => {
         await page.goto(`${origin}/${slug}?cupom=CUPOM_SIMULADO`, { waitUntil: 'domcontentloaded' });
         await waitOffer(page, configs.get(slug));
-        await showCoupon(page);
-        assert.equal(await page.locator('#dropealy-coupon').isDisabled(), false);
-        assert.equal(await page.getByRole('button', { name: 'APLICAR', exact: true }).isDisabled(), false);
-        const before = apiCalls.length;
-        await page.locator('#dropealy-coupon').fill('CUPOM_SIMULADO');
-        await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
+        if (['cupom-padrao', 'cupom-legado'].includes(slug)) {
+          assert.equal(await page.locator('.coupon-entry, #dropealy-coupon, .coupon-applied-bar').count(), 0);
+          assert.doesNotMatch(await page.locator('body').textContent(), /cupom não está disponível nesta página|cupom informado não é válido/i);
+        } else {
+          await showCoupon(page);
+          assert.equal(await page.locator('#dropealy-coupon').isDisabled(), false);
+          assert.equal(await page.getByRole('button', { name: 'APLICAR', exact: true }).isDisabled(), false);
+          const before = apiCalls.length;
+          await page.locator('#dropealy-coupon').fill('CUPOM_SIMULADO');
+          await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
           await waitOffer(page, configs.get(slug));
-        assert.ok(apiCalls.length > before);
+          assert.ok(apiCalls.length > before);
+        }
         assert.equal(await page.locator('.coupon-entry__gift').count(), 0);
         assert.equal(await cardStructure(page), baseline);
         await assertPlanLayout(page, viewport);
