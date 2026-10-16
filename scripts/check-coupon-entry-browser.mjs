@@ -23,6 +23,7 @@ function published(slug, enabled = true) {
 }
 const configs = new Map([['parceiro', published('parceiro')], ['ofc', published('ofc', false)]]);
 let browser;
+let apiCalls = 0;
 async function prices(page, slug, discounted) {
   const data = configs.get(slug);
   const links = discounted ? data.offer.discount.checkout : data.checkout;
@@ -50,6 +51,7 @@ try {
   browser = await chromium.launch({ headless: true });
   for (const viewport of [{ width: 1365, height: 900 }, { width: 390, height: 844 }]) {
     const label = viewport.width > 1000 ? 'desktop' : 'mobile';
+    configs.set('ofc', published('ofc', false));
     const context = await browser.newContext({ viewport, reducedMotion: 'reduce', serviceWorkers: 'block' });
     await context.route('**/*', async route => {
       const req = route.request();
@@ -59,6 +61,7 @@ try {
       if (url.origin === 'https://app.dropealy.com' && url.pathname.startsWith('/api/public/promo-creator/')) {
         assert.equal(req.headers().authorization, undefined);
         assert.equal(req.headers().cookie, undefined);
+        apiCalls++;
         const data = configs.get(url.pathname.split('/').pop());
         return route.fulfill({ status: data ? 200 : 404, contentType: 'application/json',
           headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' }, body: JSON.stringify(data || {}) });
@@ -119,10 +122,27 @@ try {
       await page.goto(`${origin}/ofc?CUPOM=PRESENTE50`);
       await prices(page, 'ofc', false);
       if (await toggle.count()) await toggle.click();
-      assert.equal(await input.isDisabled(), true);
-      assert.equal(await page.getByRole('button', { name: 'APLICAR', exact: true }).isDisabled(), true);
-      assert.match(await page.locator('#dropealy-coupon-message').textContent(), /ainda não está ativo/);
+      assert.equal(await input.isDisabled(), false);
+      assert.equal(await page.getByRole('button', { name: 'APLICAR', exact: true }).isDisabled(), false);
+      await input.fill('PRESENTE50');
+      const before = apiCalls;
+      await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
+      assert.ok(apiCalls > before, 'Oferta inativa também é reconferida ao aplicar');
+      await prices(page, 'ofc', false);
+      assert.match(await page.locator('#dropealy-coupon-message').textContent(), /(?:ainda não está ativo|não está disponível)/);
       assert.equal(await page.locator('.coupon-entry__gift').count(), 0);
+    });
+    await record(`${label}: aplicar reconhece permissão aprovada depois do carregamento`, async () => {
+      await page.goto(`${origin}/ofc`);
+      await prices(page, 'ofc', false);
+      await toggle.click();
+      await input.fill('PRESENTE50');
+      configs.set('ofc', published('ofc', true));
+      const before = apiCalls;
+      await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
+      await prices(page, 'ofc', true);
+      assert.ok(apiCalls > before);
+      assert.equal(await page.locator('.coupon-entry__gift').count(), 1);
     });
     assert.deepEqual(errors, [], `Sem erros de execução: ${label}`);
     assert.equal(context.pages().length, 1);

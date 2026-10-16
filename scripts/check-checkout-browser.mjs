@@ -235,8 +235,14 @@ try {
         await page.goto(`${origin}/${slug}?cupom=CUPOM_SIMULADO`, { waitUntil: 'domcontentloaded' });
         await waitOffer(page, configs.get(slug));
         await showCoupon(page);
-        assert.equal(await page.locator('#dropealy-coupon').isDisabled(), true);
-        assert.equal(await page.getByRole('button', { name: 'APLICAR', exact: true }).isDisabled(), true);
+        assert.equal(await page.locator('#dropealy-coupon').isDisabled(), false);
+        assert.equal(await page.getByRole('button', { name: 'APLICAR', exact: true }).isDisabled(), false);
+        const before = apiCalls.length;
+        await page.locator('#dropealy-coupon').fill('CUPOM_SIMULADO');
+        await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
+          await waitOffer(page, configs.get(slug));
+        assert.ok(apiCalls.length > before);
+        assert.equal(await page.locator('.coupon-entry__gift').count(), 0);
         assert.equal(await cardStructure(page), baseline);
         await assertPlanLayout(page, viewport);
       });
@@ -294,7 +300,7 @@ try {
       assert.deepEqual((await captureNavigation(page)).navigations, []);
     });
     for (const revoke of ['versao', 'permissao']) {
-      await record(`${label}: aplicar consulta novamente e recusa configuração alterada por ${revoke}`, async () => {
+      await record(`${label}: aplicar consulta novamente e respeita a aprovação atual após ${revoke}`, async () => {
         const original = couponPublished('cupom-ativo');
         configs.set('cupom-ativo', original);
         await page.goto(`${origin}/cupom-ativo`, { waitUntil: 'domcontentloaded' });
@@ -307,11 +313,15 @@ try {
         configs.set('cupom-ativo', changed);
         const before = apiCalls.length;
         await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
-        await page.getByRole('status').filter({ hasText: 'Os planos foram atualizados' }).waitFor();
-        await waitOffer(page, changed);
+        await waitOffer(page, changed, revoke === 'versao');
         assert.ok(apiCalls.length > before, 'Aplicar deve consultar a publicação atual.');
-        if (revoke === 'versao') assert.equal(await page.locator('#dropealy-coupon').inputValue(), '');
-        else assert.equal(await page.locator('#dropealy-coupon').isDisabled(), true);
+        assert.equal(await page.locator('#dropealy-coupon').isDisabled(), false);
+        if (revoke === 'versao') {
+          assert.equal(await page.locator('#dropealy-coupon').inputValue(), 'CUPOM_SIMULADO');
+          assert.equal(await page.locator('.coupon-entry__gift').count(), 1);
+        } else {
+              assert.equal(await page.locator('.coupon-entry__gift').count(), 0);
+        }
         assert.deepEqual((await captureNavigation(page)).navigations, []);
       });
     }
@@ -335,7 +345,7 @@ try {
         await page.getByRole('status').filter({ hasText: 'Os planos foram atualizados' }).waitFor();
         await waitOffer(page, changed);
         assert.ok(apiCalls.length > before, 'A reconferência deve consultar a configuração pública atual.');
-        if (trigger === 'visibilitychange') assert.equal(await page.locator('#dropealy-coupon').isDisabled(), true);
+        if (trigger === 'visibilitychange') assert.equal(await page.locator('#dropealy-coupon').isDisabled(), false);
         else assert.equal(await page.locator('#dropealy-coupon').inputValue(), '');
       });
     }
@@ -349,7 +359,7 @@ try {
       await page.evaluate(() => window.dispatchEvent(new Event('focus')));
       await assertBlocked(page);
       assert.deepEqual(await page.locator('#planos .pricing-card__price strong').allTextContents(), ['R$ 197,89', 'R$ 397,45']);
-      assert.equal(await page.locator('#dropealy-coupon').isDisabled(), true);
+      assert.equal(await page.locator('#dropealy-coupon').isDisabled(), false);
       assert.equal(await page.locator('#planos .pricing-card__original s').count(), 2);
       await page.locator('#planos a[data-checkout-plan="master"]').dispatchEvent('click');
       await page.locator('#planos a[data-checkout-plan="trial"]').dispatchEvent('auxclick', { button: 1 });

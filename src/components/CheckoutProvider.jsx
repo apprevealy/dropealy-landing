@@ -76,9 +76,13 @@ function CheckoutSession({ pathname, urlCoupon, children }) {
       const data = await fetchPublishedPromo(route.slug, { signal: controller.signal })
       if (!active.current || id !== sequence.current || controller.signal.aborted) return null
       if (previous?.data && promoRevision(previous.data) !== promoRevision(data)) {
+        const wasApplied = appliedRef.current !== null
         resetApplied()
-        editRevision.current++
-        setCouponInput('')
+        // Revoke an old applied offer, but do not erase a code the shopper is still typing.
+        if (wasApplied) {
+          editRevision.current++
+          setCouponInput('')
+        }
         setCouponMessage('')
         setNotice('Os planos foram atualizados. Confira os valores antes de continuar.')
       }
@@ -146,7 +150,7 @@ function CheckoutSession({ pathname, urlCoupon, children }) {
 
   const applyCoupon = async event => {
     event.preventDefault()
-    if (actionPending.current || !couponIsAvailable(resultRef.current?.data)) return
+    if (actionPending.current) return
     actionPending.current = true
     const edited = editRevision.current
     const input = couponInput
@@ -262,8 +266,8 @@ export function CouponControl() {
         <div className="coupon-control__fields">
           <input ref={inputRef} id="dropealy-coupon" name="coupon" type="text" value={state.couponInput || ''} maxLength={30}
             placeholder="Digite seu cupom" autoComplete="off" autoCapitalize="characters" spellCheck={false} aria-describedby={applied ? 'dropealy-coupon-gift' : 'dropealy-coupon-message'}
-            disabled={state.checking || !available} onChange={event => state.editCoupon(event.target.value)} />
-          <button type="submit" disabled={state.checking || !available || !state.couponInput?.trim()}>APLICAR</button>
+            onChange={event => state.editCoupon(event.target.value)} />
+          <button type="submit" disabled={state.checking || !state.couponInput?.trim()}>APLICAR</button>
         </div>
         <p id="dropealy-coupon-message" role="status" aria-live="polite" className={message ? 'coupon-control__message' : 'sr-only'}>{message}</p>
         {applied ? <div id="dropealy-coupon-gift" className="coupon-entry__gift coupon-gift-card" role="status" aria-live="polite">

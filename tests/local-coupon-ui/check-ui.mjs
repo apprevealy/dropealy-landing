@@ -206,10 +206,13 @@ test('modo padrão com identificador publicado mostra o campo sem habilitar desc
   assertNormalLinks();
   if (!couponForm() || couponForm().hidden) await openCoupon();
   assert.equal(couponGift(), null);
-  assert.equal(host.querySelector('#dropealy-coupon').disabled, true);
-  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
+  assert.equal(host.querySelector('#dropealy-coupon').disabled, false);
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, !host.querySelector('#dropealy-coupon').value);
   await setInput('PRESENTE50');
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, false);
+  const before = fetches.length;
   await submitCoupon();
+  assert.ok(fetches.length > before, 'APLICAR reconfere a oferta mesmo quando carregou inativa');
   normal();
   assertNormalLinks();
   assert.match(normalized(couponForm()), /cupom.*(?:não.*ativ|indisponível)/i);
@@ -357,24 +360,94 @@ test('ofc antigo com cupom publicado exibe o botão, porém não autoriza oferta
   await openCoupon();
   assert.equal(couponForm().hidden, false);
   assert.equal(couponGift(), null);
-  assert.equal(host.querySelector('#dropealy-coupon').disabled, true);
-  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
+  assert.equal(host.querySelector('#dropealy-coupon').disabled, false);
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, !host.querySelector('#dropealy-coupon').value);
   await setInput('PRESENTE50');
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, false);
+  const before = fetches.length;
   await submitCoupon();
+  assert.ok(fetches.length > before, 'APLICAR reconfere a oferta mesmo quando carregou inativa');
   normal();
   assertNormalLinks('ofc');
 });
 
-test('permissão desligada em modo cupom não habilita aplicar nem altera preço via URL', async () => {
+test('permissão desligada aceita digitar e aplicar, sem alterar preço via URL nem criar presente', async () => {
   current.offer.coupon_enabled = false;
   await mount();
   normal();
   assertNormalLinks();
   if (!couponForm() || couponForm().hidden) await openCoupon();
   assert.equal(couponGift(), null);
-  assert.equal(host.querySelector('#dropealy-coupon').disabled, true);
-  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
+  assert.equal(host.querySelector('#dropealy-coupon').disabled, false);
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, false);
+  await setInput('PRESENTE50');
+  const before = fetches.length;
   await submitCoupon();
+  assert.ok(fetches.length > before, 'APLICAR reconfere a permissão publicada');
+  normal();
+  assertNormalLinks();
+});
+
+test('APLICAR reconhece permissão recém-habilitada na mesma publicação sem recarregar', async () => {
+  current.offer.coupon_enabled = false;
+  await mount('/fornecedor');
+  await openCoupon();
+  normal();
+  assert.equal(host.querySelector('#dropealy-coupon').disabled, false);
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
+  await setInput('presente50');
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, false);
+  const before = fetches.length;
+  current.offer.coupon_enabled = true;
+  await submitCoupon();
+  assert.ok(fetches.length > before, 'APLICAR busca a aprovação atual');
+  discounted();
+  assert.match(normalized(couponGift()), /CUPOM PRESENTE APLICADO.*PRESENTE50/i);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
+  assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD'));
+});
+
+test('reconferência em andamento mantém digitação e bloqueia somente APLICAR até responder', async () => {
+  await mount('/fornecedor');
+  await openCoupon();
+  await setInput('PRESENTE50');
+  let release;
+  globalThis.fetch = async (url, options) => {
+    fetches.push({ url, options });
+    return await new Promise(resolve => { release = () => resolve({ ok: true, status: 200, json: async () => structuredClone(current) }); });
+  };
+  await act(async () => win.dispatchEvent(new win.Event('focus')));
+  await flush();
+  assert.equal(host.querySelector('#dropealy-coupon').disabled, false);
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
+  await setInput('OUTRO');
+  assert.equal(host.querySelector('#dropealy-coupon').value, 'OUTRO');
+  assert.equal(couponGift(), null);
+  await act(async () => release());
+  await flush();
+  assert.equal(host.querySelector('#dropealy-coupon').value, 'OUTRO');
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, false);
+  normal();
+  assertNormalLinks();
+});
+
+test('editar durante APLICAR impede que a resposta aprove o código antigo', async () => {
+  await mount('/fornecedor');
+  await openCoupon();
+  await setInput('PRESENTE50');
+  let release;
+  globalThis.fetch = async (url, options) => {
+    fetches.push({ url, options });
+    return await new Promise(resolve => { release = () => resolve({ ok: true, status: 200, json: async () => structuredClone(current) }); });
+  };
+  await submitCoupon();
+  assert.equal(host.querySelector('#dropealy-coupon').disabled, false);
+  assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
+  await setInput('OUTRO');
+  await act(async () => release());
+  await flush();
+  assert.equal(host.querySelector('#dropealy-coupon').value, 'OUTRO');
+  assert.equal(couponGift(), null);
   normal();
   assertNormalLinks();
 });
