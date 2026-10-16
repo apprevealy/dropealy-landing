@@ -71,7 +71,7 @@ try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const toggle = page.getByRole('button', { name: 'TEM UM CUPOM OU INDICAÇÃO?', exact: true });
-    const input = page.getByLabel('Cupom de indicação', { exact: true });
+    const input = page.locator('#dropealy-coupon');
     await record(`${label}: botão amarelo em pílula abre o formulário sem transbordar`, async () => {
       await page.goto(`${origin}/parceiro`);
       await prices(page, 'parceiro', false);
@@ -86,34 +86,43 @@ try {
       await toggle.scrollIntoViewIfNeeded();
       await page.locator('.coupon-entry').screenshot({ path: path.join(output, `${label}-closed.png`), animations: 'disabled' });
       await toggle.click();
-      assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+      assert.equal(await toggle.count(), 0);
       await input.waitFor({ state: 'visible' });
       assert.equal(await input.isEnabled(), true);
+      assert.equal(await input.getAttribute('placeholder'), 'Digite seu cupom');
+      assert.equal(await page.locator('.coupon-control__promotion').count(), 0);
+      assert.equal(await page.locator('.coupon-entry__gift').count(), 0);
     });
     await record(`${label}: aplicar e remover usa R$197/R$297 e URLs exatas do parceiro`, async () => {
       await input.fill('  presente50  ');
-      await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).click();
+      await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
       await prices(page, 'parceiro', true);
       assert.equal(await input.inputValue(), 'PRESENTE50');
+      assert.match(await page.locator('.coupon-entry__gift').textContent(), /CUPOM PRESENTE APLICADO/i);
+      assert.equal(await input.isVisible(), true);
+      assert.equal(await page.getByRole('button', { name: 'APLICAR', exact: true }).isVisible(), true);
       assert.equal(await page.locator('#planos .pricing-card--featured .pricing-card__price span').count(), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       await page.locator('#planos').screenshot({ path: path.join(output, `${label}-applied.png`), animations: 'disabled' });
-      await page.getByRole('button', { name: 'Remover', exact: true }).click();
+      await page.getByRole('button', { name: 'Remover cupom', exact: true }).click();
       await prices(page, 'parceiro', false);
+      assert.equal(await page.locator('.coupon-entry__gift').count(), 0);
     });
     await record(`${label}: URL válida autoaplica e abre o campo`, async () => {
       await page.goto(`${origin}/parceiro?CUPOM=PRESENTE50`);
       await prices(page, 'parceiro', true);
-      assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+      assert.equal(await toggle.count(), 0);
       assert.equal(await input.isVisible(), true);
+      assert.equal(await page.locator('.coupon-entry__gift').count(), 1);
     });
     await record(`${label}: cupom publicado inativo mostra orientação e mantém oferta normal`, async () => {
       await page.goto(`${origin}/ofc?CUPOM=PRESENTE50`);
       await prices(page, 'ofc', false);
-      if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
+      if (await toggle.count()) await toggle.click();
       assert.equal(await input.isDisabled(), true);
-      assert.equal(await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).isDisabled(), true);
+      assert.equal(await page.getByRole('button', { name: 'APLICAR', exact: true }).isDisabled(), true);
       assert.match(await page.locator('#dropealy-coupon-message').textContent(), /ainda não está ativo/);
+      assert.equal(await page.locator('.coupon-entry__gift').count(), 0);
     });
     assert.deepEqual(errors, [], `Sem erros de execução: ${label}`);
     assert.equal(context.pages().length, 1);

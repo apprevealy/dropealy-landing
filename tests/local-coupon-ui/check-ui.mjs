@@ -57,6 +57,8 @@ const normal = () => {
   assert.equal(price().querySelector('span').textContent, '12x de');
   assert.equal(price().querySelector('strong').textContent, 'R$ 49,90');
   assert.equal(price().classList.contains('pricing-card__price--promotional'), false);
+  assert.equal(trial().querySelector('.pricing-card__price').classList.contains('pricing-card__price--promotional'), false);
+  assert.equal(host.querySelector('.coupon-applied-bar'), null);
   assert.match(normalized(master()), /ou R\$ 497 à vista/);
   assert.match(normalized(master()), /Total no parcelamento: R\$ 598,80/);
   assert.match(normalized(trial()), /R\$ 247/);
@@ -65,6 +67,8 @@ const discounted = (expected = 'R$ 37,90') => {
   assert.equal(price().querySelector('span').textContent, '12x de');
   assert.equal(price().querySelector('strong').textContent, expected);
   assert.equal(price().classList.contains('pricing-card__price--promotional'), true);
+  assert.equal(trial().querySelector('.pricing-card__price').classList.contains('pricing-card__price--promotional'), true);
+  assert.match(normalized(host.querySelector('.coupon-applied-bar')), /PRESENTE50/);
   assert.match(normalized(master()), /ou R\$ 297 à vista/);
   assert.match(normalized(trial()), /R\$ 197/);
 };
@@ -82,6 +86,7 @@ const clickText = async text => {
   await flush();
 };
 const couponForm = () => host.querySelector('form.coupon-control');
+const couponGift = () => host.querySelector('.coupon-entry__gift');
 const couponToggle = () => [...host.querySelectorAll('button')].find(item => /tem um cupom ou indica[çc][ãa]o/i.test(normalized(item)));
 const openCoupon = async () => {
   const toggle = couponToggle();
@@ -140,9 +145,10 @@ test('URL válida aplica a oferta aprovada e mostra parcelas reais no cartão Ma
   discounted();
   assert.match(normalized(master()), /Total no parcelamento: R\$ 454,80/);
   assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
-  assert.match(host.textContent, /Cupom aplicado/);
-  assert.equal(couponToggle().getAttribute('aria-expanded'), 'true');
+  assert.equal(couponToggle(), undefined);
   assert.equal(couponForm().hidden, false);
+  assert.match(normalized(couponGift()), /CUPOM PRESENTE APLICADO/i);
+  assert.match(normalized(couponGift()), /PRESENTE50/);
   assert.ok(fetches.every(item => item.options.credentials === 'omit' && item.options.cache === 'no-store'));
 });
 
@@ -158,18 +164,23 @@ test('sem parâmetro mantém os preços normais; aplicar e remover restaura os l
   normal();
   assertNormalLinks();
   assert.equal(couponToggle().getAttribute('aria-expanded'), 'false');
-  assert.equal(couponForm().hidden, true);
-  assert.equal(couponToggle().getAttribute('aria-controls'), couponForm().id);
-  assert.ok(couponForm().id);
+  assert.ok(!couponForm() || couponForm().hidden);
+  assert.equal(couponGift(), null);
+  assert.equal(couponToggle().getAttribute('aria-controls'), 'dropealy-coupon-panel');
   await openCoupon();
-  assert.equal(couponToggle().getAttribute('aria-expanded'), 'true');
+  assert.equal(couponToggle(), undefined);
   assert.equal(couponForm().hidden, false);
+  assert.equal(couponForm().querySelector('label:not(.sr-only)'), null);
+  assert.equal(host.querySelector('#dropealy-coupon').getAttribute('placeholder'), 'Digite seu cupom');
+  assert.equal(normalized(couponForm().querySelector('button[type="submit"]')), 'APLICAR');
+  assert.equal(host.querySelector('.coupon-control__promotion'), null);
+  assert.equal(couponGift(), null);
   await setInput('presente50');
   await submitCoupon();
   discounted();
   assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
   assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD'));
-  await clickText('Remover');
+  await clickText('Remover cupom');
   normal();
   assertNormalLinks();
 });
@@ -177,7 +188,7 @@ test('sem parâmetro mantém os preços normais; aplicar e remover restaura os l
 test('remover não é desfeito por parâmetros de rastreamento; nova intenção explícita reaplica', async () => {
   await mount();
   discounted();
-  await clickText('Remover');
+  await clickText('Remover cupom');
   await navigate('/fornecedor?CUPOM=PRESENTE50&utm_source=nova');
   normal();
   await navigate('/fornecedor?CUPOM=OUTRO');
@@ -192,9 +203,9 @@ test('modo padrão com identificador publicado mostra o campo sem habilitar desc
   current.offer.coupon_enabled = false;
   await mount();
   normal();
-  assert.ok(couponToggle());
   assertNormalLinks();
-  if (couponForm().hidden) await openCoupon();
+  if (!couponForm() || couponForm().hidden) await openCoupon();
+  assert.equal(couponGift(), null);
   assert.equal(host.querySelector('#dropealy-coupon').disabled, true);
   assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
   await setInput('PRESENTE50');
@@ -219,6 +230,8 @@ test('oferta antiga à vista continua válida sem inventar parcelamento', async 
   assert.equal(price().querySelector('span'), null);
   assert.equal(price().querySelector('strong').textContent, 'R$ 297');
   assert.equal(price().classList.contains('pricing-card__price--promotional'), true);
+  assert.equal(trial().querySelector('.pricing-card__price').classList.contains('pricing-card__price--promotional'), true);
+  assert.match(normalized(host.querySelector('.coupon-applied-bar')), /PRESENTE50/);
   assert.match(normalized(master()), /À vista · Acesso vitalício/);
   assert.doesNotMatch(normalized(master()), /Total no parcelamento/);
 });
@@ -231,6 +244,7 @@ test('revalidação de permissão revogada remove o desconto sem reaplicar a URL
   await flush();
   normal();
   assert.match(host.textContent, /planos foram atualizados/);
+  assert.equal(couponGift(), null);
 });
 
 test('mudança de parcela aprovada invalida o desconto anterior e exige nova aplicação', async () => {
@@ -241,6 +255,7 @@ test('mudança de parcela aprovada invalida o desconto anterior e exige nova apl
   await flush();
   normal();
   assert.match(host.textContent, /planos foram atualizados/);
+  assert.equal(couponGift(), null);
 });
 
 test('navegação para outro parceiro não mantém cupom nem checkouts do parceiro anterior', async () => {
@@ -273,21 +288,27 @@ test('falha ao reconferir bloqueia a compra e não preserva o desconto antigo', 
 });
 
 
-test('fechar e reabrir preserva o campo e o cupom aplicado sem trocar os checkouts', async () => {
+test('cupom aplicado mantém entrada simples, mostra presente e remover oculta o presente', async () => {
   await mount();
   const form = couponForm();
   const input = host.querySelector('#dropealy-coupon');
   discounted();
-  await openCoupon();
-  assert.equal(couponToggle().getAttribute('aria-expanded'), 'false');
-  assert.equal(couponForm(), form);
-  assert.equal(couponForm().hidden, true);
-  await openCoupon();
+  assert.equal(couponToggle(), undefined);
+  assert.equal(input.value, 'PRESENTE50');
+  assert.equal(input.getAttribute('placeholder'), 'Digite seu cupom');
+  assert.equal(normalized(form.querySelector('button[type="submit"]')), 'APLICAR');
+  assert.equal(form.querySelector('label:not(.sr-only)'), null);
+  assert.equal(host.querySelector('.coupon-control__promotion'), null);
+  assert.match(normalized(couponGift()), /CUPOM PRESENTE APLICADO.*PRESENTE50/i);
+  assert.doesNotMatch(normalized(couponGift()), /compra realizada|pagamento aprovado|cupom comprado/i);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
+  await clickText('Remover cupom');
+  assert.equal(couponGift(), null);
   assert.equal(couponForm(), form);
   assert.equal(host.querySelector('#dropealy-coupon'), input);
-  assert.equal(input.value, 'PRESENTE50');
-  discounted();
-  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
+  assert.equal(input.value, '');
+  normal();
+  assertNormalLinks();
 });
 
 test('cupom manual aprovado com preços de 197 e 297 à vista não inventa parcelas', async () => {
@@ -299,11 +320,14 @@ test('cupom manual aprovado com preços de 197 e 297 à vista não inventa parce
   await submitCoupon();
   assert.equal(price().querySelector('span'), null);
   assert.equal(price().querySelector('strong').textContent, 'R$ 297');
+  assert.equal(price().classList.contains('pricing-card__price--promotional'), true);
+  assert.equal(trial().querySelector('.pricing-card__price').classList.contains('pricing-card__price--promotional'), true);
+  assert.match(normalized(host.querySelector('.coupon-applied-bar')), /PRESENTE50/);
   assert.match(normalized(trial()), /R\$ 197/);
   assert.doesNotMatch(normalized(master()), /Total no parcelamento/);
   assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
   assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD'));
-  await clickText('Remover');
+  await clickText('Remover cupom');
   normal();
   assertNormalLinks();
 });
@@ -313,12 +337,13 @@ test('cupom inválido não altera preços nem destinos do parceiro', async () =>
   normal();
   assertNormalLinks();
   assert.match(host.textContent, /cupom informado não é válido/);
-  if (couponForm().hidden) await openCoupon();
+  if (!couponForm() || couponForm().hidden) await openCoupon();
   await setInput('INVALIDO');
   await submitCoupon();
   normal();
   assertNormalLinks();
   assert.match(normalized(couponForm()), /cupom não é válido/);
+  assert.equal(couponGift(), null);
 });
 
 test('ofc antigo com cupom publicado exibe o botão, porém não autoriza oferta promocional', async () => {
@@ -331,6 +356,7 @@ test('ofc antigo com cupom publicado exibe o botão, porém não autoriza oferta
   assert.equal(couponToggle().getAttribute('aria-expanded'), 'false');
   await openCoupon();
   assert.equal(couponForm().hidden, false);
+  assert.equal(couponGift(), null);
   assert.equal(host.querySelector('#dropealy-coupon').disabled, true);
   assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
   await setInput('PRESENTE50');
@@ -344,7 +370,8 @@ test('permissão desligada em modo cupom não habilita aplicar nem altera preço
   await mount();
   normal();
   assertNormalLinks();
-  if (couponForm().hidden) await openCoupon();
+  if (!couponForm() || couponForm().hidden) await openCoupon();
+  assert.equal(couponGift(), null);
   assert.equal(host.querySelector('#dropealy-coupon').disabled, true);
   assert.equal(couponForm().querySelector('button[type="submit"]').disabled, true);
   await submitCoupon();
@@ -364,10 +391,10 @@ test('página padrão sem identificador publicado não mostra controle de cupom'
   assert.equal(couponForm(), null);
 });
 
-test('CSS mantém o prefixo branco e só muda para verde o valor promocional do Master', () => {
+test('CSS mantém o prefixo branco e mostra os valores promocionais dos dois planos em verde', () => {
   const css = readFileSync(path.join(rootPath, 'src/index.css'), 'utf8');
   assert.match(css, /\.pricing-card__price span\s*\{[^}]*color:\s*#fff;/);
   assert.match(css, /\.pricing-card__price--master strong\s*\{\s*color:\s*#ffeb78;/);
-  assert.match(css, /\.pricing-card__price--master\.pricing-card__price--promotional strong\s*\{\s*color:\s*#4ade80;/);
+  assert.match(css, /\.pricing-card__price\.pricing-card__price--promotional strong\s*\{\s*color:\s*#4ade80;/);
 });
 

@@ -1,6 +1,8 @@
 # Cupom de indicação
 
-A página de parceiro mostra o botão amarelo “TEM UM CUPOM OU INDICAÇÃO?” acima dos planos. Ele abre e fecha o formulário, preservando o código digitado. Um `?CUPOM=` válido para a oferta aprovada abre o formulário e aplica o desconto automaticamente.
+A página de parceiro começa somente com o botão amarelo arredondado “TEM UM CUPOM OU INDICAÇÃO?”, com largura máxima de 535px. Ao clicar, ele é substituído pelo campo arredondado “Digite seu cupom” e o botão “APLICAR”, sem caixa externa nem código promocional exposto antes da aplicação. No celular, os dois controles ficam empilhados. Um `?CUPOM=` válido para a oferta aprovada já abre o formulário e aplica o desconto automaticamente.
+
+Após a validação, o campo e o botão permanecem e aparece o cartão “Cupom presente aplicado”, com ícone de presente, código e explicação do desconto. Os valores promocionais ficam verdes, o Master ganha destaque e o preço normal aparece riscado. A faixa amarela inferior confirma o código aplicado; ela não afirma que existe prazo de expiração, pois o contrato publicado não contém esse prazo. O texto também não afirma renúncia à comissão do afiliado. Remover ou editar o cupom restaura os preços e checkouts normais e retira o cartão e a faixa.
 
 O campo aparece quando existe uma oferta promocional ativa ou um identificador de cupom já publicado. Um identificador antigo pode mostrar a entrada com aviso de indisponibilidade, mas não libera preços ou checkouts promocionais. Aplicar continua exigindo modo coupon, permissão ativa, oferta completa e publicada, código correspondente e links válidos do próprio parceiro. Revalidação, remoção e troca de página mantêm os mesmos controles.
 

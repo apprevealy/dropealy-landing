@@ -237,65 +237,52 @@ export function usePricing() {
   return { prices: publicPrices(state), normalPrices: NORMAL_PRICES, couponApplied: hasAppliedCoupon(state), masterPayment: publicMasterPayment(state) }
 }
 
-function PublishedCouponCode({ code, checking }) {
-  const [copyStatus, setCopyStatus] = useState('idle')
-  const copyCode = async () => {
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error('Clipboard indisponível')
-      await navigator.clipboard.writeText(code)
-      setCopyStatus('copied')
-    } catch {
-      setCopyStatus('error')
-    }
-  }
-  return (
-    <div className="coupon-control__promotion">
-      <div className="coupon-control__promotion-heading">
-        <div>
-          <span className="coupon-control__eyebrow">Cupom promocional</span>
-          <code className="coupon-control__code">{code}</code>
-        </div>
-        <button type="button" className="coupon-control__copy" onClick={() => void copyCode()} disabled={checking}>
-          {copyStatus === 'copied' ? 'Copiado!' : 'Copiar cupom'}
-        </button>
-      </div>
-      <p className="coupon-control__copy-message" role="status" aria-live="polite">
-        {copyStatus === 'copied' ? 'Cupom copiado. Cole no campo abaixo e clique em Aplicar cupom.'
-          : copyStatus === 'error' ? 'Não foi possível copiar. Selecione o código acima e copie manualmente.'
-            : 'Copie o código e aplique abaixo para ver os valores promocionais.'}
-      </p>
-    </div>
-  )
-}
-
 export function CouponControl() {
   const state = useContext(CheckoutContext)
   if (!state) throw new Error('CheckoutProvider não configurado.')
   const [open, setOpen] = useState(false)
+  const inputRef = useRef(null)
   const applied = hasAppliedCoupon(state)
+  const showInput = open || applied || Boolean(state.couponInput)
   useEffect(() => {
-    if (applied || state.couponInput) setOpen(true)
-  }, [applied, state.couponInput])
+    if (open) inputRef.current?.focus({ preventScroll: true })
+  }, [open])
   if (state.route.kind !== 'partner' || state.status !== 'ready' || !couponEntryIsVisible(state.data)) return null
   const available = couponIsAvailable(state.data)
+  const message = !available
+    ? 'O cupom desta página ainda não está ativo. Os valores sem desconto continuam disponíveis.'
+    : applied ? '' : state.couponMessage
   return (
     <div className="coupon-entry">
-      <button type="button" className="coupon-entry__toggle" aria-expanded={open} aria-controls="dropealy-coupon-panel" onClick={() => setOpen(value => !value)}>
+      {!showInput ? <button type="button" className="coupon-entry__toggle" aria-expanded={false} aria-controls="dropealy-coupon-panel" onClick={() => setOpen(true)}>
         TEM UM CUPOM OU INDICAÇÃO?
-        <svg aria-hidden="true" viewBox="0 0 20 20" width="18" height="18" className={open ? 'coupon-entry__chevron--open' : ''}><path d="m5 7.5 5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      </button>
-      <form id="dropealy-coupon-panel" className="coupon-control" hidden={!open} onSubmit={state.applyCoupon}>
-        {available ? <PublishedCouponCode key={promoRevision(state.data)} code={normalizeCoupon(state.data.coupon)} checking={state.checking} /> : null}
-        <label htmlFor="dropealy-coupon">Cupom de indicação</label>
+      </button> : null}
+      <form id="dropealy-coupon-panel" className="coupon-control" hidden={!showInput} onSubmit={state.applyCoupon}>
+        <label className="sr-only" htmlFor="dropealy-coupon">Cupom de indicação</label>
         <div className="coupon-control__fields">
-          <input id="dropealy-coupon" name="coupon" type="text" value={state.couponInput || ''} maxLength={30}
-            placeholder="Digite seu cupom de indicação" autoComplete="off" spellCheck={false} aria-describedby="dropealy-coupon-message"
+          <input ref={inputRef} id="dropealy-coupon" name="coupon" type="text" value={state.couponInput || ''} maxLength={30}
+            placeholder="Digite seu cupom" autoComplete="off" autoCapitalize="characters" spellCheck={false} aria-describedby={applied ? 'dropealy-coupon-gift' : 'dropealy-coupon-message'}
             disabled={state.checking || !available} onChange={event => state.editCoupon(event.target.value)} />
-          <button type="submit" disabled={state.checking || !available || !state.couponInput?.trim()}>Aplicar cupom</button>
-          {state.couponInput || applied ? <button type="button" className="coupon-control__clear" onClick={() => state.editCoupon('')} disabled={state.checking}>Remover</button> : null}
+          <button type="submit" disabled={state.checking || !available || !state.couponInput?.trim()}>APLICAR</button>
         </div>
-        <p id="dropealy-coupon-message" role="status" aria-live="polite">{!available ? 'O cupom desta página ainda não está ativo. Os valores sem desconto continuam disponíveis.' : state.couponMessage || (applied ? 'Cupom aplicado.' : 'O desconto será exibido após aplicar um cupom válido.')}</p>
+        <p id="dropealy-coupon-message" role="status" aria-live="polite" className={message ? 'coupon-control__message' : 'sr-only'}>{message}</p>
+        {applied ? <div id="dropealy-coupon-gift" className="coupon-entry__gift coupon-gift-card" role="status" aria-live="polite">
+          <div className="coupon-gift-icon" aria-hidden="true">
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2V7ZM12 7v14M12 7H7.5A2.5 2.5 0 1 1 10 4.5L12 7Zm0 0h4.5A2.5 2.5 0 1 0 14 4.5L12 7Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </div>
+          <div>
+            <span>Cupom presente aplicado</span>
+            <strong>{normalizeCoupon(state.data.coupon)}</strong>
+            <p>Seu Cupom Presente Dropealy liberou <b>valores com desconto</b> nos planos abaixo. Escolha seu plano para continuar.</p>
+          </div>
+        </div> : null}
+        {state.couponInput || applied ? <div className="coupon-control__actions"><button type="button" className="coupon-control__clear" onClick={() => { setOpen(true); state.editCoupon(''); inputRef.current?.focus({ preventScroll: true }) }} disabled={state.checking}>Remover cupom</button></div> : null}
       </form>
+      {applied ? <div className="coupon-applied-bar">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="m8 12 3 3 5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        <span>Seu cupom</span><strong>{normalizeCoupon(state.data.coupon)}</strong><span>está aplicado</span>
+        <a href="#planos">Ver planos</a>
+      </div> : null}
     </div>
   )
 }

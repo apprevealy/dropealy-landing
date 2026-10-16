@@ -48,15 +48,15 @@ async function waitOffer(page, data, discounted = false) {
 }
 async function showCoupon(page) {
   const toggle = page.getByRole('button', { name: 'TEM UM CUPOM OU INDICAÇÃO?', exact: true });
-  if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
+  if (await toggle.count()) await toggle.click();
 }
 async function applyCoupon(page, data, input = '  cupom_simulado  ') {
   await showCoupon(page);
-  await page.getByLabel('Cupom de indicação', { exact: true }).fill(input);
-  await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).click();
+  await page.locator('#dropealy-coupon').fill(input);
+  await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
   await waitOffer(page, data, true);
-  assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), 'CUPOM_SIMULADO');
-  assert.equal(await page.locator('#dropealy-coupon-message').textContent(), 'Cupom aplicado.');
+  assert.equal(await page.locator('#dropealy-coupon').inputValue(), 'CUPOM_SIMULADO');
+  assert.match(await page.locator('.coupon-entry__gift').textContent(), /CUPOM PRESENTE APLICADO/i);
 }
 async function captureNavigation(page) {
   return page.evaluate(() => ({ navigations: [...window.__checkoutNavigations], tabs: window.__checkoutTabs.map(tab => ({ ...tab })) }));
@@ -235,8 +235,8 @@ try {
         await page.goto(`${origin}/${slug}?cupom=CUPOM_SIMULADO`, { waitUntil: 'domcontentloaded' });
         await waitOffer(page, configs.get(slug));
         await showCoupon(page);
-        assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).isDisabled(), true);
-        assert.equal(await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).isDisabled(), true);
+        assert.equal(await page.locator('#dropealy-coupon').isDisabled(), true);
+        assert.equal(await page.getByRole('button', { name: 'APLICAR', exact: true }).isDisabled(), true);
         assert.equal(await cardStructure(page), baseline);
         await assertPlanLayout(page, viewport);
       });
@@ -246,8 +246,8 @@ try {
       for (const parameter of ['cupom', 'coupon', 'coupon_code']) {
         await page.goto(`${origin}/cupom-ativo?${parameter}=cupom_simulado`, { waitUntil: 'domcontentloaded' });
         await waitOffer(page, data, true);
-        assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), 'CUPOM_SIMULADO');
-        assert.equal(await page.getByRole('button', { name: 'TEM UM CUPOM OU INDICAÇÃO?', exact: true }).getAttribute('aria-expanded'), 'true');
+        assert.equal(await page.locator('#dropealy-coupon').inputValue(), 'CUPOM_SIMULADO');
+        assert.equal(await page.getByRole('button', { name: 'TEM UM CUPOM OU INDICAÇÃO?', exact: true }).count(), 0);
         assert.equal(await page.locator('#planos .pricing-card__original').count(), 2);
         await assertPlanLayout(page, viewport);
         assert.deepEqual((await captureNavigation(page)).navigations, []);
@@ -262,19 +262,19 @@ try {
       await page.goto(`${origin}/cupom-ativo`, { waitUntil: 'domcontentloaded' });
       await waitOffer(page, data);
       await showCoupon(page);
-      await page.getByLabel('Cupom de indicação', { exact: true }).fill('OUTRO_CUPOM');
-      await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).click();
+      await page.locator('#dropealy-coupon').fill('OUTRO_CUPOM');
+      await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
       await page.waitForFunction(() => document.querySelector('#dropealy-coupon-message')?.textContent.includes('não é válido'));
       await waitOffer(page, data);
       await applyCoupon(page, data);
-      await page.getByLabel('Cupom de indicação', { exact: true }).fill('CUPOM_EDITADO');
+      await page.locator('#dropealy-coupon').fill('CUPOM_EDITADO');
       await waitOffer(page, data);
       await applyCoupon(page, data);
-      await page.getByRole('button', { name: 'Remover', exact: true }).click();
+      await page.getByRole('button', { name: 'Remover cupom', exact: true }).click();
       await waitOffer(page, data);
-      assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), '');
-      assert.equal(await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).isDisabled(), true);
-      assert.equal(await page.getByRole('button', { name: 'Remover', exact: true }).count(), 0);
+      assert.equal(await page.locator('#dropealy-coupon').inputValue(), '');
+      assert.equal(await page.getByRole('button', { name: 'APLICAR', exact: true }).isDisabled(), true);
+      assert.equal(await page.getByRole('button', { name: 'Remover cupom', exact: true }).count(), 0);
       assert.deepEqual((await captureNavigation(page)).navigations, []);
     });
     await record(`${label}: trocar parceiro não reaproveita o cupom aplicado, mesmo com o mesmo código`, async () => {
@@ -286,7 +286,7 @@ try {
       await applyCoupon(page, original);
       await page.evaluate(() => history.pushState(null, '', '/cupom-segundo?cupom=cupom_simulado'));
       await waitOffer(page, next, true);
-      assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), 'CUPOM_SIMULADO');
+      assert.equal(await page.locator('#dropealy-coupon').inputValue(), 'CUPOM_SIMULADO');
       for (const plan of ['trial', 'master']) {
         assert.equal(await page.locator(`#planos a[data-checkout-plan="${plan}"]`).getAttribute('href'), next.offer.discount.checkout[plan]);
         assert.notEqual(next.offer.discount.checkout[plan], original.offer.discount.checkout[plan]);
@@ -300,18 +300,18 @@ try {
         await page.goto(`${origin}/cupom-ativo`, { waitUntil: 'domcontentloaded' });
         await waitOffer(page, original);
         await showCoupon(page);
-        await page.getByLabel('Cupom de indicação', { exact: true }).fill('cupom_simulado');
+        await page.locator('#dropealy-coupon').fill('cupom_simulado');
         const changed = structuredClone(original);
         if (revoke === 'versao') changed.version += 1;
         else changed.offer.coupon_enabled = false;
         configs.set('cupom-ativo', changed);
         const before = apiCalls.length;
-        await page.getByRole('button', { name: 'Aplicar cupom', exact: true }).click();
+        await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
         await page.getByRole('status').filter({ hasText: 'Os planos foram atualizados' }).waitFor();
         await waitOffer(page, changed);
         assert.ok(apiCalls.length > before, 'Aplicar deve consultar a publicação atual.');
-        if (revoke === 'versao') assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), '');
-        else assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).isDisabled(), true);
+        if (revoke === 'versao') assert.equal(await page.locator('#dropealy-coupon').inputValue(), '');
+        else assert.equal(await page.locator('#dropealy-coupon').isDisabled(), true);
         assert.deepEqual((await captureNavigation(page)).navigations, []);
       });
     }
@@ -335,8 +335,8 @@ try {
         await page.getByRole('status').filter({ hasText: 'Os planos foram atualizados' }).waitFor();
         await waitOffer(page, changed);
         assert.ok(apiCalls.length > before, 'A reconferência deve consultar a configuração pública atual.');
-        if (trigger === 'visibilitychange') assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).isDisabled(), true);
-        else assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).inputValue(), '');
+        if (trigger === 'visibilitychange') assert.equal(await page.locator('#dropealy-coupon').isDisabled(), true);
+        else assert.equal(await page.locator('#dropealy-coupon').inputValue(), '');
       });
     }
     await record(`${label}: reconferência pendente bloqueia navegação e preserva preços até a resposta`, async () => {
@@ -349,7 +349,7 @@ try {
       await page.evaluate(() => window.dispatchEvent(new Event('focus')));
       await assertBlocked(page);
       assert.deepEqual(await page.locator('#planos .pricing-card__price strong').allTextContents(), ['R$ 197,89', 'R$ 397,45']);
-      assert.equal(await page.getByLabel('Cupom de indicação', { exact: true }).isDisabled(), true);
+      assert.equal(await page.locator('#dropealy-coupon').isDisabled(), true);
       assert.equal(await page.locator('#planos .pricing-card__original s').count(), 2);
       await page.locator('#planos a[data-checkout-plan="master"]').dispatchEvent('click');
       await page.locator('#planos a[data-checkout-plan="trial"]').dispatchEvent('auxclick', { button: 1 });
