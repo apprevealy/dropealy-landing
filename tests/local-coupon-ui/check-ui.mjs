@@ -159,6 +159,31 @@ test('valor da parcela segue a configuração publicada, sem fixar o exemplo 29,
   assert.match(normalized(master()), /Total no parcelamento: R\$ 358,80/);
 });
 
+test('parcela aprovada 29,82 mostra 12x, total 357,84 e opção à vista 297 no Master', async () => {
+  current.offer.discount.master_installment_cents = 2982;
+  await mount('/fornecedor');
+  normal();
+  await openCoupon();
+  await setInput('PRESENTE50');
+  await submitCoupon();
+  discounted('R$ 29,82');
+  const header = price();
+  assert.deepEqual([...header.children].map(el => el.tagName), ['SPAN', 'STRONG']);
+  assert.equal(normalized(header.children[0]), '12x de');
+  assert.equal(normalized(header.children[1]), 'R$ 29,82');
+  const detail = master().querySelector('.pricing-card__detail');
+  assert.match(normalized(detail), /^ou R\$ 297 à vista\s*[•·]\s*Acesso vitalício/);
+  assert.equal(normalized(detail.querySelector('s')), 'R$ 497');
+  assert.equal(detail.querySelector('s').getAttribute('aria-label'), 'Valor sem cupom: R$ 497');
+  assert.match(normalized(master()), /Total no parcelamento: R\$ 357,84/);
+  assert.doesNotMatch(normalized(master()), /R\$ 29,90|R\$ 37,90/);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
+  assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD'));
+  await clickText('Remover cupom');
+  normal();
+  assertNormalLinks();
+});
+
 test('sem parâmetro mantém os preços normais; aplicar e remover restaura os links normais', async () => {
   await mount('/fornecedor');
   normal();

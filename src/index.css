@@ -682,6 +682,12 @@ body {
 .pricing-card__price--master span { font-size: 23px; }
 .pricing-card__price--master strong { color: #ffeb78; }
 .pricing-card__price.pricing-card__price--promotional strong { color: #4ade80; }
+.pricing-card__price--master.pricing-card__price--promotional {
+  align-items: baseline;
+  column-gap: 7px;
+}
+.pricing-card__price--master.pricing-card__price--promotional strong { font-size: clamp(36px, 4vw, 44px); }
+.pricing-card__price--master.pricing-card__price--promotional span { font-size: 20px; }
 .pricing-card--coupon { box-shadow: inset 0 0 38px rgba(245,158,43,.1), 0 0 48px rgba(245,158,43,.24); }
 
 .pricing-card__original {
@@ -789,6 +795,8 @@ body {
   font-size: 18px;
   white-space: nowrap;
 }
+.pricing-card__detail--promotional { gap: 5px; font-size: 16px; }
+.pricing-card__detail--promotional .pricing-card__original--inline { flex-shrink: 0; margin-left: 2px; }
 
 .pricing-card ul {
   margin-top: 0;

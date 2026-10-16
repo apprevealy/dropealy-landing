@@ -681,7 +681,10 @@ export default function Features() {
                   {masterPayment.installmentCents !== null ? <span>{masterPayment.installmentCount}x de</span> : null}
                   <strong>{commercialPrice(masterPayment.installmentCents ?? prices.master)}</strong>
                 </div>
-                <p className="pricing-card__detail">{masterPayment.installmentCents === null ? 'À vista · Acesso vitalício' : <>ou {commercialPrice(prices.master)} à vista&nbsp; • &nbsp;Acesso vitalício</>}{couponApplied ? <s className="pricing-card__original pricing-card__original--inline" aria-label={`Valor sem cupom: ${commercialPrice(normalPrices.master)}`}>{commercialPrice(normalPrices.master)}</s> : null}</p>
+                <p className={`pricing-card__detail${couponApplied ? ' pricing-card__detail--promotional' : ''}`}>
+                  {masterPayment.installmentCents === null ? 'À vista · Acesso vitalício' : <span>ou {commercialPrice(prices.master)} à vista&nbsp; • &nbsp;{couponApplied ? 'vitalício' : 'Acesso vitalício'}</span>}
+                  {couponApplied ? <s className="pricing-card__original pricing-card__original--inline" aria-label={`Valor sem cupom: ${commercialPrice(normalPrices.master)}`}>{commercialPrice(normalPrices.master)}</s> : null}
+                </p>
                 <PlanFeatures features={COMMERCIAL_PLANS.master.features} />
                 <div className="master-bonus-box">
                   <strong>Bônus exclusivos do vitalício</strong>
