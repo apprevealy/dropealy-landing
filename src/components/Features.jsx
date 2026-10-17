@@ -133,18 +133,28 @@ export default function Features() {
       ),
     },
     {
-      question: 'Preciso aparecer ou gravar minha voz para usar a Revealy?',
+      question: 'Preciso viralizar ou divulgar no Instagram para vender?',
       answer: (
         <span className="text-left">
-          Não. A plataforma foi feita exatamente para quem quer vender no total anonimato. Você pode criar avatares UGC do zero e gerar a voz deles por inteligência artificial apenas colando o seu script de texto.
+          Não. Você pode receber vendas pelas próprias buscas do Mercado Livre, sem depender do Instagram ou de um produto viral.
+          <br />
+          Para aumentar suas chances, prepare anúncios com boas fotos, informações completas, preço competitivo e condições de entrega adequadas. Atender bem e construir uma boa reputação também fazem parte do trabalho. Publicar ou divulgar um produto não garante vendas.
         </span>
       ),
     },
     {
-      question: 'O uso de avatares de IA pode dar ban ou shadowban no TikTok?',
+      question: 'Como conecto minha loja à Dropealy?',
       answer: (
         <span className="text-left">
-          Não. Os vídeos gerados pela Revealy simulam perfeitamente o comportamento e a estética de um conteúdo humano real (UGC). Além disso, o nosso recurso Revealy Boost trabalha estritamente dentro das diretrizes e regras do algoritmo, garantindo um crescimento orgânico e seguro para a sua conta.
+          Use sua própria conta do marketplace. Para conectar o Mercado Livre:
+          <br />
+          1. Faça login na Dropealy e clique em Integrações no menu lateral esquerdo.
+          <br />
+          2. Localize o Mercado Livre e clique em Conectar conta.
+          <br />
+          3. Entre na sua conta do Mercado Livre e siga as instruções para autorizar a conexão.
+          <br />
+          Para Shopee e Amazon, confira a disponibilidade de integração no painel.
         </span>
       ),
     },
@@ -169,8 +179,6 @@ export default function Features() {
       answer: (
         <span className="text-left">
           O plano trimestral garante acesso por 3 meses. O plano vitalício é um pagamento único, garantindo seu acesso para sempre sem nenhuma taxa de renovação.
-          <br />
-          Além disso, independente do plano escolhido, você conta com a nossa Garantia Blindada de 180 dias. Se em até 6 meses você decidir que a ferramenta não é para você, devolvemos todo o seu dinheiro. Risco zero para você testar!
         </span>
       ),
     },
