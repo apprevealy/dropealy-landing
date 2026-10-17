@@ -61,7 +61,7 @@ try {
   const applied = after({ ...state, couponAppliedRevision: promoRevision(data), couponInput: 'TESTE_LOCAL' });
   assert.match(applied, /R\$ 197/);
   assert.match(applied, /R\$ 397/);
-  assert.equal((applied.match(/class="pricing-card__original"/g) || []).length, 2);
+  assert.equal((applied.match(/class="[^"]*\bpricing-card__original\b[^"]*"/g) || []).length, 2);
   for (const href of Object.values(data.offer.discount.checkout)) {
     assert.ok(applied.includes(`href="${href.replaceAll('&', '&amp;')}"`), 'Cada CTA usa o checkout promocional aprovado exato.');
   }
@@ -69,7 +69,9 @@ try {
   for (const offer of [{ ...data.offer, mode: 'standard', coupon_enabled: false },
     { ...data.offer, discount: { ready: false, trial_cents: null, master_cents: null, checkout: { trial: null, master: null } } }]) {
     const html = after({ ...state, data: { ...data, offer }, couponAppliedRevision: promoRevision(data) });
-    assert.doesNotMatch(html, /dropealy-coupon|LOCAL-DISCOUNT|R\$ 197|R\$ 397|pricing-card__original/);
+    assert.doesNotMatch(html, /LOCAL-DISCOUNT|R\$ 197|R\$ 397|pricing-card__original/);
+    if (offer.mode === 'standard') assert.doesNotMatch(html, /dropealy-coupon/);
+    else assert.match(html, /dropealy-coupon/, 'Bloco 2.1 mantém a entrada disponível, sem aplicar uma oferta incompleta.');
     assert.match(html, /R\$ 247/);
     assert.match(html, /R\$ 497/);
     assert.match(html, /12x de/);

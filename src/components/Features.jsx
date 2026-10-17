@@ -4,6 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import { useCheckout, usePricing, CouponControl, CheckoutStatus } from './CheckoutProvider'
 import { COMMERCIAL_PLANS, commercialPrice } from '../lib/commercialPlans.mjs'
 
+const SUPPORT_WHATSAPP_URL = 'https://api.whatsapp.com/send?phone=5561994210220'
+const PRIVACY_REQUEST_URL = `${SUPPORT_WHATSAPP_URL}&text=${encodeURIComponent('Olá! Gostaria de solicitar a política de privacidade da Dropealy.')}`
+const TERMS_REQUEST_URL = `${SUPPORT_WHATSAPP_URL}&text=${encodeURIComponent('Olá! Gostaria de solicitar os termos de uso da Dropealy.')}`
+
 function PlanFeatures({ features }) {
   return (
     <ul>
@@ -257,7 +261,7 @@ export default function Features() {
         </div>
       </div>
 
-      <section className="relative w-full bg-[#050208] px-6 py-24">
+      <section id="features" className="relative w-full bg-[#050208] px-6 py-24">
       <div className="mx-auto max-w-[1500px] text-center">
         <span
           className="inline-flex h-[53px] w-[268px] items-center justify-center rounded-full text-sm font-semibold uppercase tracking-wide text-black"
@@ -484,10 +488,10 @@ export default function Features() {
                     <path d="M16.025 22V12.8287L14.005 13.35V11.835L16.8069 10.597H18.0286V22H16.025Z" fill="white" />
                     <defs>
                       <linearGradient id="paint0_linear_ugc" x1="0" y1="16.5" x2="33" y2="16.5" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#FFCF6E" />
-                        <stop offset="0.35" stop-color="#F59E2B" />
-                        <stop offset="0.65" stop-color="#B86A00" />
-                        <stop offset="1" stop-color="#5A3000" />
+                        <stop stopColor="#FFCF6E" />
+                        <stop offset="0.35" stopColor="#F59E2B" />
+                        <stop offset="0.65" stopColor="#B86A00" />
+                        <stop offset="1" stopColor="#5A3000" />
                       </linearGradient>
                     </defs>
                   </svg>
@@ -501,10 +505,10 @@ export default function Features() {
                     <path d="M12.3797 22V20.5828C13.1073 20.0072 13.8023 19.4316 14.4648 18.856C15.1272 18.2804 15.7245 17.7103 16.2567 17.1456C16.7888 16.5809 17.2069 16.027 17.511 15.484C17.8151 14.941 17.9671 14.4197 17.9671 13.9202C17.9671 13.5944 17.9074 13.2903 17.7879 13.0079C17.6685 12.7256 17.4784 12.4975 17.2178 12.3237C16.968 12.15 16.6314 12.0631 16.2078 12.0631C15.7951 12.0631 15.4422 12.1554 15.149 12.34C14.8666 12.5246 14.6548 12.7744 14.5137 13.0894C14.3725 13.3934 14.3019 13.741 14.3019 14.1319H12.4122C12.434 13.3066 12.6132 12.617 12.9498 12.0631C13.2865 11.5092 13.7426 11.0966 14.3182 10.8251C14.8938 10.5427 15.5399 10.4015 16.2567 10.4015C17.0277 10.4015 17.6848 10.5427 18.2278 10.8251C18.7708 11.1074 19.1889 11.5038 19.4821 12.0142C19.7753 12.5246 19.9219 13.1274 19.9219 13.8224C19.9219 14.3328 19.8242 14.8378 19.6287 15.3374C19.4441 15.8261 19.1835 16.3039 18.8468 16.7709C18.5101 17.227 18.13 17.6723 17.7065 18.1067C17.2938 18.5302 16.8648 18.9375 16.4196 19.3284C15.9743 19.7085 15.5454 20.0615 15.1327 20.3873H20.2314V22H12.3797Z" fill="white" />
                     <defs>
                       <linearGradient id="paint0_linear_radar" x1="0" y1="16.5" x2="33" y2="16.5" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#FFCF6E" />
-                        <stop offset="0.35" stop-color="#F59E2B" />
-                        <stop offset="0.65" stop-color="#B86A00" />
-                        <stop offset="1" stop-color="#5A3000" />
+                        <stop stopColor="#FFCF6E" />
+                        <stop offset="0.35" stopColor="#F59E2B" />
+                        <stop offset="0.65" stopColor="#B86A00" />
+                        <stop offset="1" stopColor="#5A3000" />
                       </linearGradient>
                     </defs>
                   </svg>
@@ -518,10 +522,10 @@ export default function Features() {
                     <path d="M16.3544 22.1955C15.6159 22.1955 14.9426 22.0652 14.3345 21.8045C13.7263 21.533 13.2376 21.1258 12.8684 20.5828C12.51 20.0289 12.3199 19.3339 12.2982 18.4976H14.2204C14.2313 18.8777 14.3182 19.2253 14.4811 19.5402C14.6548 19.8443 14.8992 20.0886 15.2141 20.2733C15.5291 20.447 15.9092 20.5339 16.3544 20.5339C16.778 20.5339 17.1363 20.4524 17.4296 20.2895C17.7336 20.1266 17.9617 19.904 18.1137 19.6217C18.2658 19.3393 18.3418 19.0244 18.3418 18.6768C18.3418 18.2533 18.2386 17.9058 18.0323 17.6343C17.826 17.3519 17.5436 17.1401 17.1852 16.999C16.8268 16.8578 16.4196 16.7872 15.9635 16.7872H15.1164V15.1745H15.9635C16.5608 15.1745 17.0495 15.0387 17.4296 14.7672C17.8097 14.4849 17.9997 14.0776 17.9997 13.5455C17.9997 13.1002 17.8531 12.7418 17.5599 12.4703C17.2775 12.1988 16.8703 12.0631 16.3381 12.0631C15.7843 12.0631 15.3444 12.226 15.0186 12.5518C14.7037 12.8776 14.5299 13.2794 14.4974 13.7573H12.5751C12.6077 13.0731 12.7815 12.4812 13.0964 11.9816C13.4222 11.4712 13.8621 11.0803 14.4159 10.8088C14.9698 10.5373 15.6159 10.4015 16.3544 10.4015C17.1255 10.4015 17.7771 10.5373 18.3092 10.8088C18.8414 11.0803 19.2432 11.4441 19.5147 11.9002C19.797 12.3563 19.9382 12.8559 19.9382 13.3989C19.9382 13.8224 19.8568 14.2079 19.6939 14.5555C19.531 14.903 19.3083 15.1962 19.026 15.4351C18.7545 15.6632 18.4341 15.8315 18.0649 15.9401C18.4884 16.027 18.8631 16.1953 19.1889 16.4451C19.5255 16.6949 19.7862 17.0153 19.9708 17.4062C20.1663 17.7863 20.264 18.2316 20.264 18.742C20.264 19.361 20.112 19.9366 19.8079 20.4687C19.5147 20.99 19.0749 21.4081 18.4884 21.7231C17.9128 22.038 17.2015 22.1955 16.3544 22.1955Z" fill="white" />
                     <defs>
                       <linearGradient id="paint0_linear_prompts" x1="0" y1="16.5" x2="33" y2="16.5" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#FFCF6E" />
-                        <stop offset="0.35" stop-color="#F59E2B" />
-                        <stop offset="0.65" stop-color="#B86A00" />
-                        <stop offset="1" stop-color="#5A3000" />
+                        <stop stopColor="#FFCF6E" />
+                        <stop offset="0.35" stopColor="#F59E2B" />
+                        <stop offset="0.65" stopColor="#B86A00" />
+                        <stop offset="1" stopColor="#5A3000" />
                       </linearGradient>
                     </defs>
                   </svg>
@@ -535,10 +539,10 @@ export default function Features() {
                     <path d="M17.3531 22V19.8334H11.7005V18.2696L17.0762 10.597H19.2916V18.123H20.8392V19.8334H19.2916V22H17.3531ZM13.8019 18.123H17.4671V12.7473L13.8019 18.123Z" fill="white" />
                     <defs>
                       <linearGradient id="paint0_linear_boost" x1="0" y1="16.5" x2="33" y2="16.5" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#FFCF6E" />
-                        <stop offset="0.35" stop-color="#F59E2B" />
-                        <stop offset="0.65" stop-color="#B86A00" />
-                        <stop offset="1" stop-color="#5A3000" />
+                        <stop stopColor="#FFCF6E" />
+                        <stop offset="0.35" stopColor="#F59E2B" />
+                        <stop offset="0.65" stopColor="#B86A00" />
+                        <stop offset="1" stopColor="#5A3000" />
                       </linearGradient>
                     </defs>
                   </svg>
@@ -824,8 +828,8 @@ export default function Features() {
           <div>
             <h3 className="font-articulat text-lg font-semibold text-white">Políticas e Termos</h3>
             <ul className="mt-4 space-y-3">
-              <li><a href="#privacidade" className="font-articulat text-sm text-white/60 hover:text-white">Política de privacidade</a></li>
-              <li><a href="#termos" className="font-articulat text-sm text-white/60 hover:text-white">Termos de Uso</a></li>
+              <li><a href={PRIVACY_REQUEST_URL} target="_blank" rel="noopener noreferrer" className="font-articulat text-sm text-white/60 hover:text-white">Solicitar política de privacidade</a></li>
+              <li><a href={TERMS_REQUEST_URL} target="_blank" rel="noopener noreferrer" className="font-articulat text-sm text-white/60 hover:text-white">Solicitar termos de uso</a></li>
             </ul>
           </div>
 
@@ -838,7 +842,7 @@ export default function Features() {
                 </a>
               </li>
               <li>
-                <a href="https://api.whatsapp.com/send?phone=5561994210220" target="_blank" rel="noopener noreferrer" className="font-articulat text-sm text-white/60 hover:text-white">
+                <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="font-articulat text-sm text-white/60 hover:text-white">
                   (61) 99421-0220
                 </a>
               </li>
@@ -869,27 +873,9 @@ export default function Features() {
             2026 © Todos os direitos reservados.
           </p>
           <div className="flex items-center gap-4">
-            <a href="#youtube" className="text-white/50 hover:text-white">
-              <svg width="22" height="18" viewBox="0 0 22 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <g clipPath="url(#clip0_1_175)">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M20.583 3.37336C20.354 2.36936 19.676 1.57736 18.814 1.30536C17.255 0.818359 11 0.818359 11 0.818359C11 0.818359 4.748 0.818359 3.186 1.30536C2.327 1.57336 1.649 2.36536 1.417 3.37336C1 5.19536 1 9.00036 1 9.00036C1 9.00036 1 12.8054 1.417 14.6274C1.646 15.6314 2.324 16.4234 3.186 16.6954C4.748 17.1824 11 17.1824 11 17.1824C11 17.1824 17.255 17.1824 18.814 16.6954C19.673 16.4274 20.351 15.6354 20.583 14.6274C21 12.8054 21 9.00036 21 9.00036C21 9.00036 21 5.19536 20.583 3.37336Z" stroke="white" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <path fillRule="evenodd" clipRule="evenodd" d="M9.00195 12L14.198 9L9.00195 6V12Z" stroke="white" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </g>
-                <defs>
-                  <clipPath id="clip0_1_175">
-                    <rect width="22" height="18" fill="white" />
-                  </clipPath>
-                </defs>
-              </svg>
-            </a>
-            <a href="#tiktok" className="text-white/50 hover:text-white">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 7.125C19.7075 7.12351 18.4684 6.60942 17.5545 5.6955C16.6406 4.78158 16.1265 3.54247 16.125 2.25C16.125 2.15054 16.0855 2.05516 16.0152 1.98484C15.9448 1.91451 15.8495 1.875 15.75 1.875H12C11.9005 1.875 11.8052 1.91451 11.7348 1.98484C11.6645 2.05516 11.625 2.15054 11.625 2.25V14.625C11.6249 15.0277 11.5168 15.4229 11.3119 15.7696C11.1071 16.1162 10.8129 16.4015 10.4601 16.5957C10.1074 16.7899 9.70901 16.8859 9.30653 16.8737C8.90404 16.8614 8.51223 16.7414 8.17195 16.5261C7.83168 16.3108 7.55542 16.0081 7.37199 15.6496C7.18857 15.2912 7.1047 14.89 7.12915 14.4881C7.1536 14.0862 7.28545 13.6982 7.51097 13.3646C7.73648 13.031 8.04739 12.764 8.41125 12.5916C8.47535 12.561 8.52947 12.5129 8.56731 12.4529C8.60515 12.3928 8.62515 12.3232 8.625 12.2522V8.25C8.62502 8.19518 8.61303 8.14103 8.58986 8.09135C8.5667 8.04167 8.53292 7.99767 8.49091 7.96246C8.4489 7.92724 8.39968 7.90167 8.34672 7.88753C8.29376 7.87339 8.23835 7.87103 8.18438 7.88062C5.01469 8.445 2.625 11.3438 2.625 14.625C2.625 16.4152 3.33616 18.1321 4.60203 19.398C5.8679 20.6638 7.58479 21.375 9.375 21.375C11.1652 21.375 12.8821 20.6638 14.148 19.398C15.4138 18.1321 16.125 16.4152 16.125 14.625V10.26C17.5926 11.1568 19.2801 11.6293 21 11.625C21.0995 11.625 21.1948 11.5855 21.2652 11.5152C21.3355 11.4448 21.375 11.3495 21.375 11.25V7.5C21.375 7.40054 21.3355 7.30516 21.2652 7.23483C21.1948 7.16451 21.0995 7.125 21 7.125ZM20.625 10.8675C18.9488 10.7984 17.3299 10.2383 15.9694 9.25688C15.9133 9.21641 15.8471 9.19225 15.7781 9.18706C15.7091 9.18188 15.64 9.19588 15.5785 9.22752C15.517 9.25915 15.4654 9.30718 15.4295 9.3663C15.3936 9.42542 15.3747 9.49332 15.375 9.5625V14.625C15.375 16.2163 14.7429 17.7424 13.6176 18.8676C12.4924 19.9929 10.9663 20.625 9.375 20.625C7.7837 20.625 6.25758 19.9929 5.13236 18.8676C4.00714 17.7424 3.375 16.2163 3.375 14.625C3.375 11.8575 5.28 9.39469 7.875 8.71875V12.0291C7.41886 12.2924 7.0401 12.6712 6.77679 13.1274C6.51348 13.5835 6.37491 14.101 6.375 14.6277C6.37509 15.1544 6.51385 15.6718 6.77733 16.1278C7.0408 16.5839 7.4197 16.9626 7.87593 17.2257C8.33216 17.4889 8.84964 17.6274 9.37634 17.6271C9.90304 17.6269 10.4204 17.488 10.8764 17.2244C11.3324 16.9608 11.7109 16.5818 11.974 16.1255C12.2371 15.6692 12.3754 15.1517 12.375 14.625V2.625H15.3872C15.4801 3.98355 16.0617 5.26251 17.0246 6.22539C17.9875 7.18827 19.2665 7.76993 20.625 7.86281V10.8675Z" fill="white" fillOpacity="0.7" />
-                <path d="M15.75 1.75C15.8826 1.75 16.0097 1.80272 16.1035 1.89648C16.1973 1.99025 16.25 2.11739 16.25 2.25L16.2559 2.48535C16.3154 3.65894 16.8077 4.77257 17.6426 5.60742C18.5331 6.4979 19.7407 6.99851 21 7C21.1326 7 21.2597 7.05272 21.3535 7.14648C21.4473 7.24025 21.5 7.36739 21.5 7.5V11.25C21.5 11.3826 21.4473 11.5097 21.3535 11.6035C21.2597 11.6973 21.1326 11.75 21 11.75C19.3307 11.7541 17.6921 11.314 16.25 10.4785V14.625C16.25 16.4484 15.5256 18.197 14.2363 19.4863C12.947 20.7756 11.1984 21.5 9.375 21.5C7.55164 21.5 5.80298 20.7756 4.51367 19.4863C3.22436 18.197 2.5 16.4484 2.5 14.625C2.5 11.285 4.93129 8.33327 8.16211 7.75781C8.23404 7.74503 8.30832 7.74777 8.37891 7.7666C8.44945 7.78543 8.51532 7.81933 8.57129 7.86621C8.6272 7.91308 8.67224 7.972 8.70312 8.03809C8.73401 8.10431 8.75002 8.17693 8.75 8.25V12.252L8.74512 12.3223C8.73535 12.3921 8.71071 12.4594 8.67285 12.5195C8.63498 12.5796 8.58513 12.631 8.52637 12.6699L8.46484 12.7041C8.1212 12.867 7.82724 13.1195 7.61426 13.4346C7.40131 13.7496 7.27699 14.1165 7.25391 14.4961C7.2309 14.8756 7.31022 15.2543 7.4834 15.5928C7.65663 15.9313 7.91792 16.2176 8.23926 16.4209C8.5605 16.624 8.93064 16.7375 9.31055 16.749C9.69045 16.7606 10.0664 16.6696 10.3994 16.4863C10.7325 16.3029 11.0106 16.0334 11.2041 15.7061C11.3976 15.3787 11.4999 15.0053 11.5 14.625V2.25C11.5 2.11739 11.5527 1.99025 11.6465 1.89648C11.7403 1.80272 11.8674 1.75 12 1.75H15.75ZM12.5 14.625L12.4932 14.8301C12.4621 15.3072 12.3217 15.7717 12.082 16.1875C11.808 16.6628 11.4135 17.0584 10.9385 17.333C10.4636 17.6074 9.92442 17.7517 9.37598 17.752C8.82747 17.7521 8.2886 17.6081 7.81348 17.334C7.33824 17.0598 6.94339 16.6655 6.66895 16.1904C6.39454 15.7154 6.25014 15.1765 6.25 14.6279C6.2499 14.0793 6.39466 13.5396 6.66895 13.0645C6.931 12.6107 7.30312 12.2312 7.75 11.959V8.88379C5.29128 9.6018 3.5 11.9695 3.5 14.625C3.5 16.1831 4.11893 17.6775 5.2207 18.7793C6.32248 19.8811 7.81685 20.5 9.375 20.5C10.9331 20.5 12.4275 19.8811 13.5293 18.7793C14.6311 17.6775 15.25 16.1831 15.25 14.625V9.5625C15.2497 9.47061 15.2746 9.38034 15.3223 9.30176C15.3702 9.22293 15.4395 9.15839 15.5215 9.11621C15.6034 9.07414 15.6953 9.05567 15.7871 9.0625C15.8791 9.06941 15.9682 9.10132 16.043 9.15527C17.3483 10.0968 18.8949 10.6433 20.5 10.7344V7.97656C19.1549 7.85713 17.8932 7.27011 16.9365 6.31348C15.9799 5.35684 15.3929 4.09512 15.2734 2.75H12.5V14.625Z" stroke="white" strokeOpacity="0.7" strokeWidth="0.25" />
-              </svg>
-            </a>
             <a
               href="https://www.instagram.com/revealyapp/"
+              aria-label="Instagram da Revealy"
               target="_blank"
               rel="noopener noreferrer"
               className="text-white/50 hover:text-white"
@@ -907,7 +893,7 @@ export default function Features() {
                 </defs>
               </svg>
             </a>
-            <a href="#whatsapp" className="text-white/50 hover:text-white">
+            <a href={SUPPORT_WHATSAPP_URL} aria-label="Suporte Dropealy no WhatsApp" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" clipRule="evenodd" d="M18.2041 5.76108C16.5581 4.11408 14.3691 3.20608 12.0371 3.20508C7.23014 3.20508 3.31914 7.11408 3.31814 11.9191C3.31614 13.4481 3.71714 14.9511 4.48114 16.2761L3.24414 20.7921L7.86614 19.5801C9.14514 20.2761 10.5771 20.6411 12.0331 20.6411H12.0371C16.8421 20.6411 20.7531 16.7311 20.7551 11.9261C20.7561 9.59808 19.8501 7.40908 18.2041 5.76108Z" stroke="white" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M13.0938 13.5599L13.4998 13.1569C13.8728 12.7869 14.4627 12.7399 14.8927 13.0419C15.3087 13.3339 15.6847 13.5959 16.0347 13.8399C16.5907 14.2259 16.6578 15.0179 16.1788 15.4959L15.8197 15.8549" stroke="white" strokeOpacity="0.7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
