@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { couponEntryIsVisible, couponFromSearch, couponIsAvailable, couponMatches, fetchPublishedPromo, normalizeCoupon, NORMAL_PRICES, promoRevision } from '../lib/promoCreator.mjs'
 import { checkoutMessage, checkoutProps, checkoutRoute, hasAppliedCoupon, publicMasterPayment, publicPrices } from '../lib/checkoutRoute.mjs'
+import { consumeInitialPromo, discardPreviousInitialPromo, fetchInitialPromo, initialPromoSnapshot } from '../lib/initialPromo.mjs'
 
 export const CheckoutContext = createContext(null)
 const LOCATION_EVENT = 'dropealy:location-change'
@@ -42,19 +43,29 @@ export function CheckoutProvider({ children }) {
 
 function CheckoutSession({ pathname, urlCoupon, children }) {
   const route = checkoutRoute(pathname)
-  const [result, setResult] = useState(null)
-  const [couponInput, setCouponInput] = useState(urlCoupon)
-  const [couponAppliedRevision, setCouponAppliedRevision] = useState(null)
-  const [couponMessage, setCouponMessage] = useState('')
-  const [notice, setNotice] = useState('')
+  const [initial] = useState(() => {
+    const snapshot = route.kind === 'partner' ? initialPromoSnapshot(route.slug, pathname, urlCoupon) : null
+    const applied = snapshot && couponMatches(snapshot.data, urlCoupon)
+    return { snapshot, applied }
+  })
+  const [result, setResult] = useState(() => initial.snapshot
+    ? { slug: route.slug, status: 'ready', data: initial.snapshot.data, checking: false } : null)
+  const [couponInput, setCouponInput] = useState(initial.applied ? normalizeCoupon(urlCoupon) : urlCoupon)
+  const [couponAppliedRevision, setCouponAppliedRevision] = useState(initial.applied ? promoRevision(initial.snapshot.data) : null)
+  const [couponMessage, setCouponMessage] = useState(initial.applied ? 'Cupom aplicado.' : '')
+  const [notice, setNotice] = useState(() => initial.snapshot && urlCoupon && !initial.applied && couponEntryIsVisible(initial.snapshot.data)
+    ? couponIsAvailable(initial.snapshot.data)
+      ? 'O cupom informado não é válido para esta página. Os valores normais foram mantidos.'
+      : 'O cupom não está disponível nesta página. Os valores normais foram mantidos.' : '')
   const active = useRef(false)
-  const resultRef = useRef(null)
-  const appliedRef = useRef(null)
+  const resultRef = useRef(result)
+  const appliedRef = useRef(couponAppliedRevision)
+  const startupComplete = useRef(Boolean(initial.snapshot))
   const editRevision = useRef(0)
   const request = useRef(null)
   const sequence = useRef(0)
   const actionPending = useRef(false)
-  const urlCouponHandled = useRef(false)
+  const urlCouponHandled = useRef(Boolean(initial.snapshot))
 
   const resetApplied = useCallback(() => {
     appliedRef.current = null
@@ -73,8 +84,13 @@ function CheckoutSession({ pathname, urlCoupon, children }) {
     resultRef.current = pending
     setResult(pending)
     try {
-      const data = await fetchPublishedPromo(route.slug, { signal: controller.signal })
+      const loaded = startupComplete.current
+        ? { data: await fetchPublishedPromo(route.slug, { signal: controller.signal }), bootstrap: null }
+        : await fetchInitialPromo(route.slug, { pathname, coupon: urlCoupon, signal: controller.signal })
+      const data = loaded.data
       if (!active.current || id !== sequence.current || controller.signal.aborted) return null
+      startupComplete.current = true
+      consumeInitialPromo(loaded.bootstrap)
       if (previous?.data && promoRevision(previous.data) !== promoRevision(data)) {
         const wasApplied = appliedRef.current !== null
         resetApplied()
@@ -108,6 +124,7 @@ function CheckoutSession({ pathname, urlCoupon, children }) {
       return data
     } catch (error) {
       if (!active.current || id !== sequence.current || controller.signal.aborted) return null
+      startupComplete.current = true
       resetApplied()
       setCouponMessage('')
       const failed = { slug: route.slug, status: error.code === 'not_found' ? 'not_found' : 'error', data: null, checking: false }
@@ -117,7 +134,7 @@ function CheckoutSession({ pathname, urlCoupon, children }) {
     } finally {
       if (request.current === controller) request.current = null
     }
-  }, [route.kind, route.slug, resetApplied, urlCoupon])
+  }, [route.kind, route.slug, pathname, resetApplied, urlCoupon])
 
   useEffect(() => {
     active.current = true
@@ -125,7 +142,8 @@ function CheckoutSession({ pathname, urlCoupon, children }) {
     const revalidate = () => {
       if (!document.hidden && !actionPending.current && !request.current) void refresh()
     }
-    void refresh()
+    if (initial.snapshot) consumeInitialPromo(initial.snapshot.bootstrap)
+    else void refresh()
     window.addEventListener('focus', revalidate)
     document.addEventListener('visibilitychange', revalidate)
     const interval = window.setInterval(revalidate, REFRESH_MS)
@@ -133,11 +151,12 @@ function CheckoutSession({ pathname, urlCoupon, children }) {
       active.current = false
       sequence.current++
       request.current?.abort()
+      discardPreviousInitialPromo()
       window.clearInterval(interval)
       window.removeEventListener('focus', revalidate)
       document.removeEventListener('visibilitychange', revalidate)
     }
-  }, [route.kind, refresh])
+  }, [route.kind, refresh, initial])
 
   const editCoupon = value => {
     urlCouponHandled.current = true
@@ -218,7 +237,8 @@ function CheckoutSession({ pathname, urlCoupon, children }) {
       : result?.slug === route.slug
         ? { route, status: result.status, data: result.data, checking: result.checking }
         : { route, status: 'loading', data: null }
-  const value = { ...state, couponInput, couponAppliedRevision, couponMessage, notice, editCoupon, applyCoupon, navigate }
+  const initialCouponPending = state.route.kind === 'partner' && Boolean(urlCoupon) && state.status === 'loading'
+  const value = { ...state, couponInput, couponAppliedRevision, couponMessage, notice, editCoupon, applyCoupon, navigate, initialCouponPending }
   return <CheckoutContext.Provider value={value}>{children}</CheckoutContext.Provider>
 }
 
@@ -238,7 +258,7 @@ export function useCheckout() {
 export function usePricing() {
   const state = useContext(CheckoutContext)
   if (!state) throw new Error('CheckoutProvider não configurado.')
-  return { prices: publicPrices(state), normalPrices: NORMAL_PRICES, couponApplied: hasAppliedCoupon(state), masterPayment: publicMasterPayment(state) }
+  return { prices: publicPrices(state), normalPrices: NORMAL_PRICES, couponApplied: hasAppliedCoupon(state), masterPayment: publicMasterPayment(state), initialCouponPending: Boolean(state.initialCouponPending) }
 }
 
 export function CouponControl() {

@@ -41,7 +41,7 @@ function CrownIcon() {
 
 export default function Features() {
   const getCheckoutProps = useCheckout()
-  const { prices, normalPrices, couponApplied, masterPayment } = usePricing()
+  const { prices, normalPrices, couponApplied, masterPayment, initialCouponPending } = usePricing()
   const [openIndex, setOpenIndex] = useState(-1)
   const [currentStep, setCurrentStep] = useState(0)
   const [deliveryCardIndex, setDeliveryCardIndex] = useState(0)
@@ -170,7 +170,7 @@ export default function Features() {
       question: 'Quanto custa cada plano?',
       answer: (
         <span className="text-left">
-          Trimestral: {commercialPrice(prices.trial)} por 3 meses. Vitalício: {masterPayment.installmentCents === null ? <>{commercialPrice(prices.master)} à vista</> : <>{masterPayment.installmentCount}x de {commercialPrice(masterPayment.installmentCents)} ou {commercialPrice(prices.master)} à vista</>}, com acesso vitalício.
+          {initialCouponPending ? 'Aplicando seu cupom…' : <>Trimestral: {commercialPrice(prices.trial)} por 3 meses. Vitalício: {masterPayment.installmentCents === null ? <>{commercialPrice(prices.master)} à vista</> : <>{masterPayment.installmentCount}x de {commercialPrice(masterPayment.installmentCents)} ou {commercialPrice(prices.master)} à vista</>}, com acesso vitalício.</>}
         </span>
       ),
     },
@@ -671,7 +671,9 @@ export default function Features() {
                   <span>ampliar suas vendas</span>
                 </h4>
                 {couponApplied ? <p className="pricing-card__original"><s>{commercialPrice(normalPrices.trial)}</s></p> : null}
-                <div className={`pricing-card__price${couponApplied ? ' pricing-card__price--promotional' : ''}`}><strong>{commercialPrice(prices.trial)}</strong><span>/3 meses</span></div>
+                {initialCouponPending
+                  ? <div className="pricing-card__price pricing-card__price--loading" aria-busy="true"><span>Aplicando seu cupom…</span></div>
+                  : <div className={`pricing-card__price${couponApplied ? ' pricing-card__price--promotional' : ''}`}><strong>{commercialPrice(prices.trial)}</strong><span>/3 meses</span></div>}
                 <PlanFeatures features={COMMERCIAL_PLANS.trial.features} />
                 <div className="master-bonus-box">
                   <strong>Bônus incluso no trimestral</strong>
@@ -689,6 +691,7 @@ export default function Features() {
                   <span>Pague uma vez,</span>
                   <span>use para sempre</span>
                 </h4>
+                {initialCouponPending ? <div className="pricing-card__price pricing-card__price--master pricing-card__price--loading" aria-busy="true"><span>Aplicando seu cupom…</span></div> : <>
                 <div className={`pricing-card__price pricing-card__price--master${couponApplied ? ' pricing-card__price--promotional' : ''}`}>
                   {masterPayment.installmentCents !== null ? <span>{masterPayment.installmentCount}x de</span> : null}
                   <strong>{commercialPrice(masterPayment.installmentCents ?? prices.master)}</strong>
@@ -697,13 +700,14 @@ export default function Features() {
                   {masterPayment.installmentCents === null ? 'À vista · Acesso vitalício' : <span>ou {commercialPrice(prices.master)} à vista&nbsp; • &nbsp;{couponApplied ? 'vitalício' : 'Acesso vitalício'}</span>}
                   {couponApplied ? <s className="pricing-card__original pricing-card__original--inline" aria-label={`Valor sem cupom: ${commercialPrice(normalPrices.master)}`}>{commercialPrice(normalPrices.master)}</s> : null}
                 </p>
+                </>}
                 <PlanFeatures features={COMMERCIAL_PLANS.master.features} />
                 <div className="master-bonus-box">
                   <strong>Bônus exclusivos do vitalício</strong>
                   {COMMERCIAL_PLANS.master.bonuses.map((bonus) => <div className="master-bonus-box__item" key={bonus}>
                     <img src="/assets/check-icon.svg" alt="" aria-hidden="true" /><span>{bonus}</span>
                   </div>)}
-                  {masterPayment.totalCents !== null ? <small>Total no parcelamento: {commercialPrice(masterPayment.totalCents)}.</small> : null}
+                  {!initialCouponPending && masterPayment.totalCents !== null ? <small>Total no parcelamento: {commercialPrice(masterPayment.totalCents)}.</small> : null}
                 </div>
                 <a {...getCheckoutProps('master', 'https://checkout.perfectpay.com.br/pay/PPU38CQGGNH?')} target="_blank" rel="noopener noreferrer">Quero começar agora</a>
               </article>

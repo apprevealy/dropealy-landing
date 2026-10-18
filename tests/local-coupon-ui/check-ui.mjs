@@ -15,7 +15,7 @@ const output = mkdtempSync(path.join(tmpdir(), 'dropealy-landing-ui-'));
 const bundle = path.join(output, 'components.cjs');
 await build({
   stdin: {
-    contents: 'export { CheckoutProvider } from "./src/components/CheckoutProvider.jsx"; export { default as Features } from "./src/components/Features.jsx";',
+    contents: 'export { CheckoutProvider, CheckoutContext } from "./src/components/CheckoutProvider.jsx"; export { default as Features } from "./src/components/Features.jsx";',
     resolveDir: rootPath, loader: 'jsx',
   },
   bundle: true, outfile: bundle, format: 'cjs', platform: 'node', jsx: 'automatic',
@@ -23,7 +23,7 @@ await build({
     builder.onResolve({ filter: /^react(?:\/jsx-runtime)?$/ }, ({ path: name }) => ({ path: require.resolve(name), external: true }));
   } }],
 });
-const { CheckoutProvider, Features } = require(bundle);
+const { CheckoutProvider, CheckoutContext, Features } = require(bundle);
 const { act } = React;
 const originals = Object.fromEntries(['window', 'document', 'navigator', 'Event', 'fetch', 'IS_REACT_ACT_ENVIRONMENT'].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
 // React DOM detects browser event support when its module is loaded.
@@ -36,7 +36,7 @@ for (const key of ['window', 'document', 'navigator']) {
   if (originals[key]) Object.defineProperty(globalThis, key, originals[key]); else delete globalThis[key];
 }
 bootstrapWindow.close();
-let win, host, root, current, fetches, opened;
+let win, host, root, current, fetches, opened, commits;
 const checkout = code => `https://checkout.centerpag.com/pay/${code}?ref=a%2Fb&tag=1%262`;
 const offer = (slug = 'fornecedor') => ({
   slug, version: 1, status: 'published', coupon: 'PRESENTE50',
@@ -53,6 +53,16 @@ const price = () => master().querySelector('.pricing-card__price--master');
 const trial = () => host.querySelector('.pricing-card:not(.pricing-card--featured)');
 const normalized = element => element.textContent.replace(/\s+/g, ' ').trim();
 const flush = async () => { await act(async () => { await new Promise(resolve => setImmediate(resolve)); }); };
+function CheckoutObserver() {
+  const state = React.useContext(CheckoutContext);
+  React.useLayoutEffect(() => {
+    commits.push({ status: state.status, pending: state.initialCouponPending,
+      master: host.querySelector('.pricing-card__price--master')?.textContent,
+      trial: host.querySelector('.pricing-card:not(.pricing-card--featured) .pricing-card__price')?.textContent,
+      allText: host.textContent, applied: Boolean(host.querySelector('.coupon-applied-bar')) });
+  });
+  return null;
+}
 const normal = () => {
   assert.equal(price().querySelector('span').textContent, '12x de');
   assert.equal(price().querySelector('strong').textContent, 'R$ 49,90');
@@ -76,7 +86,7 @@ const navigate = async url => { await act(async () => win.history.pushState({}, 
 const mount = async (url = '/fornecedor?CUPOM=PRESENTE50') => {
   win.history.replaceState({}, '', url);
   await act(async () => root.render(React.createElement(React.StrictMode, null,
-    React.createElement(CheckoutProvider, null, React.createElement(Features)))));
+    React.createElement(CheckoutProvider, null, React.createElement(CheckoutObserver), React.createElement(Features)))));
   await flush();
 };
 const clearCouponInput = async () => {
@@ -123,7 +133,7 @@ beforeEach(() => {
   for (const [key, value] of Object.entries({ window: win, document: win.document, navigator: win.navigator, Event: win.Event, IS_REACT_ACT_ENVIRONMENT: true })) {
     Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
   }
-  current = offer(); fetches = []; opened = [];
+  current = offer(); fetches = []; opened = []; commits = [];
   globalThis.fetch = async (url, options) => {
     fetches.push({ url, options });
     if (current instanceof Error) throw current;
@@ -157,6 +167,134 @@ test('URL válida aplica a oferta aprovada e mostra parcelas reais no cartão Ma
   assert.match(normalized(couponGift()), /CUPOM PRESENTE APLICADO/i);
   assert.match(normalized(couponGift()), /PRESENTE50/);
   assert.ok(fetches.every(item => item.options.credentials === 'omit' && item.options.cache === 'no-store'));
+});
+
+function startupFixture(outcome = { ok: true, data: structuredClone(current) }, pending = false) {
+  let resolve;
+  const record = { version: 1, slug: 'fornecedor', pathname: '/fornecedor', coupon: 'PRESENTE50',
+    startedAt: Date.now(), consumed: false, status: pending ? 'pending' : 'settled',
+    outcome: pending ? undefined : outcome };
+  record.promise = pending ? new Promise(done => { resolve = value => {
+    record.status = 'settled'; record.outcome = value; done(value);
+  }; }) : Promise.resolve(outcome);
+  win.__DROPEALY_PROMO_BOOTSTRAP__ = record;
+  return { record, resolve };
+}
+
+test('resposta de head pronta inicia já com desconto na primeira pintura e não repete a consulta de montagem', async () => {
+  const { record } = startupFixture();
+  await mount();
+  discounted();
+  assert.equal(fetches.length, 0);
+  assert.equal(record.consumed, true);
+  assert.ok(commits.length > 0);
+  assert.ok(commits.every(commit => commit.status === 'ready' && commit.applied));
+  assert.ok(commits.every(commit => /37,90/.test(commit.master) && !/49,90/.test(commit.master)));
+});
+
+test('head pendente mostra estado neutro em preços e FAQ, usa uma promessa no StrictMode e aplica tudo junto', async () => {
+  const { record, resolve } = startupFixture(undefined, true);
+  await mount();
+  assert.equal(fetches.length, 0);
+  assert.equal(record.consumed, false);
+  assert.match(normalized(price()), /Aplicando seu cupom/);
+  assert.equal(price().getAttribute('aria-busy'), 'true');
+  assert.doesNotMatch(host.textContent, /R\$ 247|R\$ 497|R\$ 49,90|R\$ 598,80/);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), null);
+  assert.equal(host.querySelector('.coupon-applied-bar'), null);
+  await act(async () => resolve({ ok: true, data: structuredClone(current) }));
+  await flush();
+  discounted();
+  assert.equal(fetches.length, 0);
+  assert.equal(record.consumed, true);
+  assert.ok(commits.filter(commit => commit.status === 'loading').every(commit => commit.pending && !/R\$ 49,90/.test(commit.master)));
+  assert.ok(commits.filter(commit => commit.status === 'ready').every(commit => commit.applied && /37,90/.test(commit.master)));
+});
+
+test('sem bootstrap, a consulta inicial lenta também esconde preços normais até validar o cupom da URL', async () => {
+  const pending = [];
+  globalThis.fetch = (url, options) => {
+    fetches.push({ url, options });
+    return new Promise(resolve => pending.push(resolve));
+  };
+  await mount();
+  assert.match(normalized(price()), /Aplicando seu cupom/);
+  assert.doesNotMatch(host.textContent, /R\$ 247|R\$ 497|R\$ 49,90|R\$ 598,80/);
+  await act(async () => pending.forEach(resolve => resolve({ ok: true, status: 200, json: async () => structuredClone(current) })));
+  await flush();
+  discounted();
+  assert.ok(commits.filter(commit => commit.status === 'ready').every(commit => commit.applied));
+});
+
+test('head pronto com cupom diferente ou permissão desligada mostra somente preços e destinos normais', async () => {
+  current.offer.coupon_enabled = false;
+  startupFixture();
+  await mount();
+  normal(); assertNormalLinks();
+  assert.equal(fetches.length, 0);
+  assert.ok(commits.every(commit => commit.status === 'ready' && !commit.applied));
+});
+
+test('bootstrap malformado bloqueia checkouts e uma nova montagem pode se recuperar com consulta fresca', async () => {
+  const invalid = structuredClone(current); invalid.slug = 'outro';
+  const { record } = startupFixture({ ok: true, data: invalid });
+  await mount();
+  assert.equal(record.consumed, true);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), null);
+  assert.equal(host.querySelector('.coupon-applied-bar'), null);
+  await act(async () => root.unmount());
+  root = createRoot(host);
+  await mount();
+  discounted();
+  assert.ok(fetches.length > 0);
+});
+
+test('head de A abandonado em B não aplica resposta antiga ao voltar para A', async () => {
+  const { record, resolve } = startupFixture(undefined, true);
+  await mount();
+  current = offer('outro-parceiro'); current.coupon = 'OUTRO';
+  await navigate('/outro-parceiro?CUPOM=OUTRO');
+  assert.equal(record.consumed, true);
+  current = offer();
+  const before = fetches.length;
+  await navigate('/fornecedor?CUPOM=PRESENTE50');
+  discounted();
+  assert.ok(fetches.length > before);
+  await act(async () => resolve({ ok: true, data: { ...structuredClone(current), slug: 'resposta-antiga' } }));
+  await flush();
+  discounted();
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
+});
+
+test('editar cupom vindo do head não é desfeito por foco ou rastreamento, e checkout reconfere dados atuais', async () => {
+  startupFixture();
+  await mount();
+  await clearCouponInput();
+  normal();
+  await act(async () => win.dispatchEvent(new win.Event('focus')));
+  await flush();
+  normal();
+  await navigate('/fornecedor?CUPOM=PRESENTE50&utm_source=teste');
+  normal();
+  await setInput('PRESENTE50'); await submitCoupon();
+  discounted();
+  const before = fetches.length;
+  current.offer.coupon_enabled = false;
+  await act(async () => host.querySelector('[data-checkout-plan="master"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true })));
+  await flush();
+  assert.ok(fetches.length > before);
+  assert.deepEqual(opened, ['closed']);
+  normal();
+});
+
+test('sem cupom, carregamento lento preserva a apresentação normal sem placeholder novo', async () => {
+  globalThis.fetch = (url, options) => new Promise((resolve, reject) => {
+    options.signal.addEventListener('abort', () => reject(new DOMException('abort', 'AbortError')), { once: true });
+  });
+  await mount('/fornecedor');
+  assert.equal(host.querySelector('.pricing-card__price--loading'), null);
+  assert.match(normalized(price()), /49,90/);
+  assert.match(normalized(trial()), /R\$ 247/);
 });
 
 test('faixa compacta confirma o código aplicado e inteira leva aos planos, sem inventar prazo', async () => {

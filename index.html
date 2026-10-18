@@ -2,8 +2,47 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/assets/dropealy-favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://app.dropealy.com" crossorigin />
+    <script data-promo-bootstrap>
+      // Start only an explicit coupon's public offer before fonts and the application bundle.
+      ;(function () {
+        try {
+          var match = window.location.pathname.match(/^\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/)
+          var reserved = ['api', 'assets', 'monitor', 'admin', 'login', 'logout', 'suporte', 'termos', 'privacidade', 'index', 'favicon']
+          if (!match || match[1].length < 3 || match[1].length > 60 || reserved.indexOf(match[1]) !== -1) return
+          var values = []
+          new URLSearchParams(window.location.search).forEach(function (value, key) {
+            if (['cupom', 'coupon', 'coupon_code'].indexOf(key.toLowerCase()) !== -1) values.push(value)
+          })
+          var coupon = values.length === 1 ? values[0].trim().toUpperCase() : ''
+          if (!/^[A-Z0-9_-]{2,30}$/.test(coupon)) return
+          var controller = new AbortController()
+          var record = { version: 1, slug: match[1], pathname: window.location.pathname, coupon: coupon, startedAt: Date.now(), status: 'pending', consumed: false }
+          var cancel = function () { controller.abort() }
+          var timeout = window.setTimeout(cancel, 8000)
+          window.addEventListener('pagehide', cancel, { once: true })
+          record.promise = window.fetch('https://app.dropealy.com/api/public/promo-creator/' + encodeURIComponent(record.slug), {
+            method: 'GET', headers: { Accept: 'application/json' }, credentials: 'omit', cache: 'no-store', redirect: 'error', signal: controller.signal
+          }).then(function (response) {
+            if (response.status !== 200 || !response.ok) throw { code: response.status === 404 ? 'not_found' : 'unavailable' }
+            return response.json()
+          }).then(function (data) {
+            return { ok: true, data: data }
+          }, function (error) {
+            return { ok: false, code: error && error.code === 'not_found' ? 'not_found' : 'unavailable' }
+          }).then(function (outcome) {
+            window.clearTimeout(timeout)
+            window.removeEventListener('pagehide', cancel)
+            record.status = 'settled'
+            record.outcome = outcome
+            return outcome
+          })
+          window.__DROPEALY_PROMO_BOOTSTRAP__ = record
+        } catch (_) { /* The application falls back to its normal validated request. */ }
+      })()
+    </script>
+    <link rel="icon" type="image/png" href="/assets/dropealy-favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

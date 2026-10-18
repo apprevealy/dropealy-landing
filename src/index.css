@@ -932,6 +932,14 @@ body {
   box-shadow: 0 -6px 26px rgba(227,165,38,.16);
 }
 .coupon-applied-bar svg { flex: 0 0 auto; }
+.pricing-card__price--loading {
+  min-height: 68px;
+}
+.pricing-card__price--loading span {
+  color: rgba(255,255,255,.7);
+  font-size: 16px;
+  line-height: 1.5;
+}
 .coupon-applied-bar__label { white-space: nowrap; }
 .coupon-applied-bar__code {
   min-width: 0;
