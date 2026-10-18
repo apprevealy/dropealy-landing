@@ -77,6 +77,41 @@ try {
     assert.match(html, /12x de/);
     assert.match(html, /R\$ 49,90/);
   }
+  for (const tier of [100, 200]) {
+    const tierFixture = structuredClone(fixture);
+    tierFixture.coupon = `PRESENTE${tier}`;
+    tierFixture.offer.coupon_tier = tier;
+    tierFixture.offer.discount.master_cents = tier === 100 ? 39700 : 29700;
+    tierFixture.offer.discount.master_installment_cents = tier === 100 ? null : 2982;
+    tierFixture.offer.discount.checkout = {
+      trial: `https://pay.pagamentorevealy.com/TIER${tier}-TRIAL?ref=parceiro%2Fa&src=aprovado+`,
+      master: `https://pay.pagamentorevealy.com/TIER${tier}-MASTER?ref=parceiro%2Fa&src=aprovado+`,
+    };
+    const tierData = validatePublishedPromo(tierFixture, slug);
+    const tierState = { route: { kind: 'partner', slug }, status: 'ready', data: tierData };
+    const beforeCoupon = after(tierState);
+    assert.match(beforeCoupon, /R\$ 247/);
+    assert.match(beforeCoupon, /R\$ 49,90/);
+    assert.doesNotMatch(beforeCoupon, /TIER(?:100|200)-/);
+    const tierApplied = after({ ...tierState, couponInput: tierData.coupon, couponAppliedRevision: promoRevision(tierData) });
+    assert.match(tierApplied, /R\$ 197/);
+    assert.match(tierApplied, new RegExp(`PRESENTE${tier}`));
+    for (const href of Object.values(tierData.offer.discount.checkout)) {
+      assert.ok(tierApplied.includes(`href="${href.replaceAll('&', '&amp;')}"`), 'O tier usa seus próprios destinos aprovados.');
+    }
+    assert.doesNotMatch(tierApplied, new RegExp(`TIER${tier === 100 ? 200 : 100}-`));
+    if (tier === 100) {
+      assert.match(tierApplied, /R\$ 397/);
+      assert.match(tierApplied, /À vista · Acesso vitalício/);
+      assert.doesNotMatch(tierApplied, /12x|parcelamento|29,82|357,84/);
+    } else {
+      assert.match(tierApplied, /12x de/);
+      assert.match(tierApplied, /R\$ 29,82/);
+      assert.match(tierApplied, /ou R\$ 297 à vista/);
+      assert.match(tierApplied, /Total no parcelamento: R\$ 357,84/);
+      assert.doesNotMatch(tierApplied, /R\$ 397/);
+    }
+  }
   for (const status of ['loading', 'error', 'not_found']) {
     const html = after({ route: { kind: 'partner', slug: 'parceiro-a' }, status, data: null });
     assert.equal((html.match(/aria-disabled="true"/g) || []).length, 2);

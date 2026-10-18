@@ -55,6 +55,7 @@ function completeDiscount(offer, coupon) {
 function validateOffer(offer, coupon) {
   const discount = offer?.discount;
   if (!['standard', 'coupon'].includes(offer?.mode) || typeof offer.coupon_enabled !== 'boolean' ||
+      (Object.hasOwn(offer, 'coupon_tier') && ![null, 100, 200].includes(offer.coupon_tier)) ||
       offer.normal?.trial_cents !== NORMAL_PRICES.trial || offer.normal?.master_cents !== NORMAL_PRICES.master ||
       typeof discount?.ready !== 'boolean' ||
       !(discount.trial_cents === null || isDiscountPrice(discount.trial_cents, NORMAL_PRICES.trial)) ||
@@ -63,11 +64,14 @@ function validateOffer(offer, coupon) {
         !isDiscountPrice(discount.master_installment_cents, COMMERCIAL_PLANS.master.installmentCents)) ||
       !(discount.checkout?.trial === null || isAllowedCheckout(discount.checkout?.trial)) ||
       !(discount.checkout?.master === null || isAllowedCheckout(discount.checkout?.master)) ||
+      (offer.coupon_tier === 100 && discount.ready &&
+        (discount.trial_cents !== 19700 || discount.master_cents !== 39700 || discount.master_installment_cents !== null)) ||
       (discount.ready && !completeDiscount(offer, coupon))) {
     throw new PromoCreatorError('invalid_response', 'Configuração publicada inválida.');
   }
   return {
     mode: offer.mode, coupon_enabled: offer.coupon_enabled,
+    ...([100, 200].includes(offer.coupon_tier) ? { coupon_tier: offer.coupon_tier } : {}),
     normal: { trial_cents: NORMAL_PRICES.trial, master_cents: NORMAL_PRICES.master },
     discount: {
       ready: discount.ready, trial_cents: discount.trial_cents, master_cents: discount.master_cents,
@@ -82,7 +86,7 @@ export function couponIsAvailable(data) {
   return data?.offer?.mode === 'coupon' && data.offer.coupon_enabled === true && completeDiscount(data.offer, data.coupon);
 }
 
-/** Only the published block 2.1 exposes coupon entry; a saved code alone is not a mode. */
+/** Only the published coupon blocks expose entry; a saved code alone is not a mode. */
 export function couponEntryIsVisible(data) {
   return data?.offer?.mode === 'coupon';
 }
