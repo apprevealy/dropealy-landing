@@ -44,9 +44,21 @@ function isDiscountPrice(value, normal) {
   return Number.isSafeInteger(value) && value > 0 && value < normal;
 }
 
+// Only the approved snapshot selects a tier. Legacy offers keep their exact amounts.
+function validCouponTier(offer) {
+  if (!offer || !Object.hasOwn(offer, 'coupon_tier')) return true;
+  const tier = offer.coupon_tier;
+  if (tier === null || tier === 200) return true;
+  if (tier !== 100) return false;
+  const discount = offer.discount;
+  return (discount?.trial_cents === null || discount?.trial_cents === 19700) &&
+    (discount?.master_cents === null || discount?.master_cents === 39700) &&
+    (discount?.master_installment_cents === undefined || discount?.master_installment_cents === null);
+}
+
 function completeDiscount(offer, coupon) {
   const discount = offer?.discount;
-  return Boolean(normalizeCoupon(coupon) && discount?.ready === true &&
+  return Boolean(validCouponTier(offer) && normalizeCoupon(coupon) && discount?.ready === true &&
     isDiscountPrice(discount.trial_cents, NORMAL_PRICES.trial) &&
     isDiscountPrice(discount.master_cents, NORMAL_PRICES.master) &&
     isAllowedCheckout(discount.checkout?.trial) && isAllowedCheckout(discount.checkout?.master));
@@ -55,6 +67,7 @@ function completeDiscount(offer, coupon) {
 function validateOffer(offer, coupon) {
   const discount = offer?.discount;
   if (!['standard', 'coupon'].includes(offer?.mode) || typeof offer.coupon_enabled !== 'boolean' ||
+      !validCouponTier(offer) ||
       offer.normal?.trial_cents !== NORMAL_PRICES.trial || offer.normal?.master_cents !== NORMAL_PRICES.master ||
       typeof discount?.ready !== 'boolean' ||
       !(discount.trial_cents === null || isDiscountPrice(discount.trial_cents, NORMAL_PRICES.trial)) ||
@@ -68,6 +81,7 @@ function validateOffer(offer, coupon) {
   }
   return {
     mode: offer.mode, coupon_enabled: offer.coupon_enabled,
+    ...(Object.hasOwn(offer, 'coupon_tier') ? { coupon_tier: offer.coupon_tier } : {}),
     normal: { trial_cents: NORMAL_PRICES.trial, master_cents: NORMAL_PRICES.master },
     discount: {
       ready: discount.ready, trial_cents: discount.trial_cents, master_cents: discount.master_cents,
@@ -82,7 +96,7 @@ export function couponIsAvailable(data) {
   return data?.offer?.mode === 'coupon' && data.offer.coupon_enabled === true && completeDiscount(data.offer, data.coupon);
 }
 
-/** Only the published block 2.1 exposes coupon entry; a saved code alone is not a mode. */
+/** Only a published coupon method exposes entry; a saved code alone is not a mode. */
 export function couponEntryIsVisible(data) {
   return data?.offer?.mode === 'coupon';
 }

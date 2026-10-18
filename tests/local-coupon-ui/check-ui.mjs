@@ -118,6 +118,14 @@ const setInput = async value => {
     input.dispatchEvent(new win.Event('change', { bubbles: true }));
   });
 };
+const selectPublishedTier = tier => {
+  current.offer.coupon_tier = tier;
+  current.offer.discount.master_cents = tier === 100 ? 39700 : 29700;
+  current.offer.discount.master_installment_cents = tier === 100 ? null : 2982;
+  current.offer.discount.checkout = {
+    trial: checkout(`fornecedor_TD_${tier}`), master: checkout(`fornecedor_MD_${tier}`),
+  };
+};
 
 beforeEach(() => {
   win = new Window({ url: 'https://www.dropealy.com/' });
@@ -190,6 +198,68 @@ test('parcela aprovada 29,82 mostra 12x, total 357,84 e opção à vista 297 no 
   await clickText('Remover cupom');
   normal();
   assertNormalLinks();
+});
+
+test('bloco 2.1 aplica 397 à vista e 197 com os checkouts próprios, sem inventar parcelas', async () => {
+  selectPublishedTier(100);
+  await mount('/fornecedor?coupon_tier=200&master_cents=29700');
+  normal();
+  assertNormalLinks();
+  await openCoupon();
+  await setInput('PRESENTE50');
+  await submitCoupon();
+  assert.equal(price().querySelector('strong').textContent, 'R$ 397');
+  assert.equal(price().querySelector('span'), null);
+  assert.match(normalized(trial()), /R\$ 197/);
+  assert.doesNotMatch(normalized(master()), /Total no parcelamento|12x de/);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD_100'));
+  assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD_100'));
+  await act(async () => host.querySelector('[data-checkout-plan="master"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true })));
+  await flush();
+  assert.deepEqual(opened, [checkout('fornecedor_MD_100')]);
+});
+
+test('bloco 2.2 publicado usa 297 e seu checkout mesmo com outro bloco solicitado pela URL', async () => {
+  selectPublishedTier(200);
+  await mount('/fornecedor?CUPOM=PRESENTE50&coupon_tier=100&master_cents=39700');
+  discounted('R$ 29,82');
+  assert.match(normalized(master()), /ou R\$ 297 à vista/);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD_200'));
+  assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD_200'));
+  await act(async () => host.querySelector('[data-checkout-plan="master"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true })));
+  await flush();
+  assert.deepEqual(opened, [checkout('fornecedor_MD_200')]);
+});
+
+test('troca de bloco durante a compra impede checkout antigo e exige conferir a nova oferta', async () => {
+  selectPublishedTier(100);
+  await mount();
+  assert.equal(price().querySelector('strong').textContent, 'R$ 397');
+  selectPublishedTier(200);
+  await act(async () => host.querySelector('[data-checkout-plan="master"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true })));
+  await flush();
+  assert.deepEqual(opened, ['closed']);
+  normal();
+  assertNormalLinks();
+  assert.match(host.textContent, /planos foram atualizados/);
+  await setInput('PRESENTE50');
+  await submitCoupon();
+  discounted('R$ 29,82');
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD_200'));
+});
+
+test('bloco 2.1 com preços de outro bloco bloqueia checkouts em vez de reutilizar o anterior', async () => {
+  selectPublishedTier(100);
+  await mount();
+  current.offer.discount.master_cents = 29700;
+  await act(async () => win.dispatchEvent(new win.Event('focus')));
+  await flush();
+  normal();
+  for (const plan of ['trial', 'master']) {
+    assert.equal(host.querySelector(`[data-checkout-plan="${plan}"]`).getAttribute('href'), null);
+    assert.equal(host.querySelector(`[data-checkout-plan="${plan}"]`).getAttribute('aria-disabled'), 'true');
+  }
+  assert.match(host.textContent, /temporariamente indisponíveis/);
 });
 
 test('sem parâmetro mantém os preços normais; aplicar e remover restaura os links normais', async () => {
