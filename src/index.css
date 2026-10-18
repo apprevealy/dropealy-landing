@@ -757,19 +757,6 @@ body {
 
 .coupon-control input::placeholder { color: rgba(255,255,255,.5); }
 .coupon-control input:focus { border-color: rgba(255,255,255,.6); }
-.coupon-control__actions { display: flex; justify-content: flex-end; margin-top: 8px; }
-.coupon-control .coupon-control__clear {
-  min-height: 36px;
-  padding: 6px 0 6px 12px;
-  border: 0;
-  background: none;
-  color: rgba(255,255,255,.65);
-  font-size: 12px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-.coupon-control .coupon-control__clear:hover { color: #ffe775; }
 .coupon-entry button:focus-visible,
 .coupon-entry input:focus-visible,
 .coupon-applied-bar a:focus-visible {

@@ -96,7 +96,7 @@ try {
       assert.equal(await page.locator('.coupon-control__promotion').count(), 0);
       assert.equal(await page.locator('.coupon-entry__gift').count(), 0);
     });
-    await record(`${label}: aplicar e remover usa R$197/R$297 e URLs exatas do parceiro`, async () => {
+    await record(`${label}: aplicar usa R$197/R$297 e URLs exatas, sem botão de remoção`, async () => {
       await input.fill('  presente50  ');
       await page.getByRole('button', { name: 'APLICAR', exact: true }).click();
       await prices(page, 'parceiro', true);
@@ -107,7 +107,8 @@ try {
       assert.equal(await page.locator('#planos .pricing-card--featured .pricing-card__price span').count(), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       await page.locator('#planos').screenshot({ path: path.join(output, `${label}-applied.png`), animations: 'disabled' });
-      await page.getByRole('button', { name: 'Remover cupom', exact: true }).click();
+      assert.equal(await page.getByRole('button', { name: 'Remover cupom', exact: true }).count(), 0);
+      await input.fill('');
       await prices(page, 'parceiro', false);
       assert.equal(await page.locator('.coupon-entry__gift').count(), 0);
     });

@@ -79,11 +79,10 @@ const mount = async (url = '/fornecedor?CUPOM=PRESENTE50') => {
     React.createElement(CheckoutProvider, null, React.createElement(Features)))));
   await flush();
 };
-const clickText = async text => {
-  const button = [...host.querySelectorAll('button')].find(item => normalized(item) === text);
-  assert.ok(button, `Botão ${text} presente`);
-  await act(async () => button.dispatchEvent(new win.MouseEvent('click', { bubbles: true })));
-  await flush();
+const clearCouponInput = async () => {
+  assert.equal([...host.querySelectorAll('button')].some(item => normalized(item) === 'Remover cupom'), false);
+  assert.equal(host.querySelector('.coupon-control__clear'), null);
+  await setInput('');
 };
 const couponForm = () => host.querySelector('form.coupon-control');
 const couponGift = () => host.querySelector('.coupon-entry__gift');
@@ -188,7 +187,7 @@ test('parcela aprovada 29,82 mostra 12x, total 357,84 e opção à vista 297 no 
   assert.doesNotMatch(normalized(master()), /R\$ 29,90|R\$ 37,90/);
   assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
   assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD'));
-  await clickText('Remover cupom');
+  await clearCouponInput();
   normal();
   assertNormalLinks();
 });
@@ -220,7 +219,7 @@ test('bloco 2.1 aplica somente seu cupom e checkout e mostra 12x 39,86 ou 397 à
   await act(async () => host.querySelector('[data-checkout-plan="master"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true })));
   await flush();
   assert.deepEqual(opened, [checkout('TIER100_MASTER')]);
-  await clickText('Remover cupom');
+  await clearCouponInput();
   normal();
   assertNormalLinks();
 });
@@ -249,7 +248,7 @@ test('bloco 2.1 com parcela diferente da confirmada bloqueia os dois checkouts',
   assert.equal(host.querySelector('.coupon-applied-bar'), null);
 });
 
-test('sem parâmetro mantém os preços normais; aplicar e remover restaura os links normais', async () => {
+test('sem parâmetro mantém os preços normais; editar o código aplicado restaura os links normais sem botão de remoção', async () => {
   await mount('/fornecedor');
   normal();
   assertNormalLinks();
@@ -270,15 +269,15 @@ test('sem parâmetro mantém os preços normais; aplicar e remover restaura os l
   discounted();
   assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
   assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD'));
-  await clickText('Remover cupom');
+  await clearCouponInput();
   normal();
   assertNormalLinks();
 });
 
-test('remover não é desfeito por parâmetros de rastreamento; nova intenção explícita reaplica', async () => {
+test('apagar o código não é desfeito por parâmetros de rastreamento; nova intenção explícita reaplica', async () => {
   await mount();
   discounted();
-  await clickText('Remover cupom');
+  await clearCouponInput();
   await navigate('/fornecedor?CUPOM=PRESENTE50&utm_source=nova');
   normal();
   await navigate('/fornecedor?CUPOM=OUTRO');
@@ -369,7 +368,7 @@ test('falha ao reconferir bloqueia a compra e não preserva o desconto antigo', 
 });
 
 
-test('cupom aplicado mantém entrada simples, mostra presente e remover oculta o presente', async () => {
+test('cupom aplicado mantém entrada simples e presente, sem botão de remoção; editar oculta o presente', async () => {
   await mount();
   const form = couponForm();
   const input = host.querySelector('#dropealy-coupon');
@@ -383,7 +382,7 @@ test('cupom aplicado mantém entrada simples, mostra presente e remover oculta o
   assert.match(normalized(couponGift()), /CUPOM PRESENTE APLICADO.*PRESENTE50/i);
   assert.doesNotMatch(normalized(couponGift()), /compra realizada|pagamento aprovado|cupom comprado/i);
   assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
-  await clickText('Remover cupom');
+  await clearCouponInput();
   assert.equal(couponGift(), null);
   assert.equal(couponForm(), form);
   assert.equal(host.querySelector('#dropealy-coupon'), input);
@@ -408,7 +407,7 @@ test('cupom manual aprovado com preços de 197 e 297 à vista não inventa parce
   assert.doesNotMatch(normalized(master()), /Total no parcelamento/);
   assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
   assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('fornecedor_TD'));
-  await clickText('Remover cupom');
+  await clearCouponInput();
   normal();
   assertNormalLinks();
 });
