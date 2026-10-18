@@ -65,7 +65,8 @@ function validateOffer(offer, coupon) {
       !(discount.checkout?.trial === null || isAllowedCheckout(discount.checkout?.trial)) ||
       !(discount.checkout?.master === null || isAllowedCheckout(discount.checkout?.master)) ||
       (offer.coupon_tier === 100 && discount.ready &&
-        (discount.trial_cents !== 19700 || discount.master_cents !== 39700 || discount.master_installment_cents !== null)) ||
+        (discount.trial_cents !== 19700 || discount.master_cents !== 39700 ||
+          ![null, 3986].includes(discount.master_installment_cents))) ||
       (discount.ready && !completeDiscount(offer, coupon))) {
     throw new PromoCreatorError('invalid_response', 'Configuração publicada inválida.');
   }

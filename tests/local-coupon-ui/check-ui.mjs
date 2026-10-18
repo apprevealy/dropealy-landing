@@ -168,6 +168,7 @@ test('valor da parcela segue a configuração publicada, sem fixar o exemplo 29,
 });
 
 test('parcela aprovada 29,82 mostra 12x, total 357,84 e opção à vista 297 no Master', async () => {
+  current.offer.coupon_tier = 200;
   current.offer.discount.master_installment_cents = 2982;
   await mount('/fornecedor');
   normal();
@@ -190,6 +191,62 @@ test('parcela aprovada 29,82 mostra 12x, total 357,84 e opção à vista 297 no 
   await clickText('Remover cupom');
   normal();
   assertNormalLinks();
+});
+
+test('bloco 2.1 aplica somente seu cupom e checkout e mostra 12x 39,86 ou 397 à vista', async () => {
+  current.coupon = 'PRESENTE100';
+  current.offer.coupon_tier = 100;
+  current.offer.discount.master_cents = 39700;
+  current.offer.discount.master_installment_cents = 3986;
+  current.offer.discount.checkout = { trial: checkout('TIER100_TRIAL'), master: checkout('TIER100_MASTER') };
+  await mount('/fornecedor');
+  normal();
+  assertNormalLinks();
+  await openCoupon();
+  await setInput('PRESENTE200');
+  await submitCoupon();
+  normal();
+  assertNormalLinks();
+  await setInput('  presente100  ');
+  await submitCoupon();
+  assert.equal(price().querySelector('span').textContent, '12x de');
+  assert.equal(price().querySelector('strong').textContent, 'R$ 39,86');
+  assert.match(normalized(master()), /ou R\$ 397 à vista/);
+  assert.match(normalized(master()), /Total no parcelamento: R\$ 478,32/);
+  assert.match(normalized(trial()), /R\$ 197/);
+  assert.match(normalized(host.querySelector('.coupon-applied-bar')), /PRESENTE100/);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('TIER100_MASTER'));
+  assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), checkout('TIER100_TRIAL'));
+  await act(async () => host.querySelector('[data-checkout-plan="master"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true })));
+  await flush();
+  assert.deepEqual(opened, [checkout('TIER100_MASTER')]);
+  await clickText('Remover cupom');
+  normal();
+  assertNormalLinks();
+});
+
+test('bloco 2.1 legado com parcela nula mantém 397 à vista sem inventar 12x', async () => {
+  current.coupon = 'PRESENTE100';
+  current.offer.coupon_tier = 100;
+  current.offer.discount.master_cents = 39700;
+  current.offer.discount.master_installment_cents = null;
+  await mount('/fornecedor?cupom=PRESENTE100');
+  assert.equal(price().querySelector('span'), null);
+  assert.equal(price().querySelector('strong').textContent, 'R$ 397');
+  assert.match(normalized(master()), /À vista · Acesso vitalício/);
+  assert.doesNotMatch(normalized(master()), /Total no parcelamento/);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
+});
+
+test('bloco 2.1 com parcela diferente da confirmada bloqueia os dois checkouts', async () => {
+  current.offer.coupon_tier = 100;
+  current.offer.discount.master_cents = 39700;
+  current.offer.discount.master_installment_cents = 3985;
+  await mount();
+  assert.match(host.textContent, /Planos temporariamente indisponíveis/);
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), null);
+  assert.equal(host.querySelector('[data-checkout-plan="trial"]').getAttribute('href'), null);
+  assert.equal(host.querySelector('.coupon-applied-bar'), null);
 });
 
 test('sem parâmetro mantém os preços normais; aplicar e remover restaura os links normais', async () => {

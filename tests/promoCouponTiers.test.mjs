@@ -15,7 +15,7 @@ const fixture = (tier = 100) => ({
     normal: { trial_cents: 24700, master_cents: 49700 },
     discount: {
       ready: true, trial_cents: 19700, master_cents: tier === 100 ? 39700 : 29700,
-      master_installment_cents: tier === 100 ? null : 2982,
+      master_installment_cents: tier === 100 ? 3986 : 2982,
       checkout: { trial: checkout(`TIER${tier}_TRIAL`), master: checkout(`TIER${tier}_MASTER`) },
     },
   },
@@ -39,16 +39,29 @@ test('preserva o tier publicado sem alterar códigos, preços ou atribuição do
   }
 });
 
-test('tier100 pronto exige os dois valores confirmados e parcela explicitamente nula', () => {
+test('tier100 pronto exige os valores confirmados e rejeita parcelas não autorizadas', () => {
   for (const change of [
     data => { data.offer.discount.trial_cents = 19600; },
     data => { data.offer.discount.master_cents = 29700; },
     data => { data.offer.discount.master_installment_cents = 2982; },
+    data => { data.offer.discount.master_installment_cents = 3985; },
+    data => { data.offer.discount.master_installment_cents = 3987; },
     data => { delete data.offer.discount.master_installment_cents; },
   ]) {
     const data = fixture(); change(data);
     assert.throws(() => validatePublishedPromo(data, data.slug), { code: 'invalid_response' });
   }
+});
+
+test('tier100 legado à vista continua válido durante a atualização da publicação', () => {
+  const data = fixture();
+  data.offer.discount.master_installment_cents = null;
+  const parsed = validatePublishedPromo(data, data.slug);
+  assert.deepEqual(parsed, data);
+  const applied = stateFor(parsed, true);
+  assert.deepEqual(publicPrices(applied), { trial: 19700, master: 39700 });
+  assert.deepEqual(publicMasterPayment(applied), { installmentCount: 12, installmentCents: null, totalCents: null });
+  assert.equal(checkoutProps(applied, 'master', 'HOME').href, data.offer.discount.checkout.master);
 });
 
 test('tier200 e ofertas sem tier mantêm parcelas opcionais e valores legados aprovados', () => {
@@ -116,7 +129,7 @@ test('cada tier aplicado usa somente seus preços e URLs selecionados; sem cupom
     const applied = stateFor(data, true);
     assert.deepEqual(publicPrices(applied), { trial: 19700, master: tier === 100 ? 39700 : 29700 });
     assert.deepEqual(publicMasterPayment(applied), tier === 100
-      ? { installmentCount: 12, installmentCents: null, totalCents: null }
+      ? { installmentCount: 12, installmentCents: 3986, totalCents: 47832 }
       : { installmentCount: 12, installmentCents: 2982, totalCents: 35784 });
     for (const plan of ['trial', 'master']) {
       assert.equal(checkoutProps(pending, plan, 'HOME').href, data.checkout[plan]);
