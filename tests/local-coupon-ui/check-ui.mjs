@@ -159,6 +159,36 @@ test('URL válida aplica a oferta aprovada e mostra parcelas reais no cartão Ma
   assert.ok(fetches.every(item => item.options.credentials === 'omit' && item.options.cache === 'no-store'));
 });
 
+test('faixa compacta confirma o código aplicado e inteira leva aos planos, sem inventar prazo', async () => {
+  await mount();
+  const bar = host.querySelector('.coupon-applied-bar');
+  assert.equal(bar.tagName, 'A');
+  assert.equal(bar.getAttribute('href'), '#planos');
+  assert.equal(bar.getAttribute('aria-label'), 'Cupom PRESENTE50 aplicado. Ver planos.');
+  assert.equal(bar.querySelector('.coupon-applied-bar__label').textContent, 'Seu cupom');
+  assert.equal(bar.querySelector('.coupon-applied-bar__code').textContent, 'PRESENTE50');
+  assert.equal(bar.querySelector('.coupon-applied-bar__status').textContent, 'APLICADO');
+  assert.equal(bar.querySelector('svg').getAttribute('aria-hidden'), 'true');
+  assert.equal(bar.querySelector('a'), null);
+  assert.doesNotMatch(normalized(bar), /expira|\d+:\d+|Ver planos/i);
+  assert.equal(host.querySelector('#planos')?.id, 'planos');
+  discounted();
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('fornecedor_MD'));
+});
+
+test('faixa conserva o código completo em outra página, sem reaproveitar o cupom anterior', async () => {
+  await mount();
+  current = offer('outro-parceiro');
+  current.coupon = 'CUPOMLONGO' + 'A'.repeat(20);
+  await navigate(`/outro-parceiro?CUPOM=${current.coupon}`);
+  const bar = host.querySelector('.coupon-applied-bar');
+  assert.ok(bar);
+  assert.equal(bar.querySelector('.coupon-applied-bar__code').textContent, current.coupon);
+  assert.doesNotMatch(normalized(bar), /PRESENTE50/);
+  assert.equal(bar.getAttribute('href'), '#planos');
+  assert.equal(host.querySelector('[data-checkout-plan="master"]').getAttribute('href'), checkout('outro-parceiro_MD'));
+});
+
 test('valor da parcela segue a configuração publicada, sem fixar o exemplo 29,90', async () => {
   current.offer.discount.master_installment_cents = 2990;
   await mount('/fornecedor?cupom=presente50');

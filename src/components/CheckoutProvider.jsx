@@ -281,11 +281,12 @@ export function CouponControl() {
           </div>
         </div> : null}
       </form>
-      {applied ? <div className="coupon-applied-bar">
-        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="m8 12 3 3 5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        <span>Seu cupom</span><strong>{normalizeCoupon(state.data.coupon)}</strong><span>está aplicado</span>
-        <a href="#planos">Ver planos</a>
-      </div> : null}
+      {applied ? <a className="coupon-applied-bar" href="#planos" aria-label={`Cupom ${normalizeCoupon(state.data.coupon)} aplicado. Ver planos.`}>
+        <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7v5h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        <span className="coupon-applied-bar__label">Seu cupom</span>
+        <strong className="coupon-applied-bar__code">{normalizeCoupon(state.data.coupon)}</strong>
+        <span className="coupon-applied-bar__status">APLICADO</span>
+      </a> : null}
     </div>
   )
 }

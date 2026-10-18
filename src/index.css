@@ -759,7 +759,7 @@ body {
 .coupon-control input:focus { border-color: rgba(255,255,255,.6); }
 .coupon-entry button:focus-visible,
 .coupon-entry input:focus-visible,
-.coupon-applied-bar a:focus-visible {
+.coupon-applied-bar:focus-visible {
   outline: 2px solid #ffeb78;
   outline-offset: 3px;
 }
@@ -913,32 +913,45 @@ body {
   left: 50%;
   bottom: 0;
   display: flex;
-  width: min(100%, 720px);
+  width: min(calc(100% - 24px), 720px);
   min-height: 58px;
   transform: translateX(-50%);
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border: 1px solid rgba(255,225,113,.45);
+  border: 1px solid rgba(255,232,156,.65);
   border-bottom: 0;
   border-radius: 16px 16px 0 0;
-  background: linear-gradient(90deg, #b9811c, #e3b543, #b9811c);
+  background: linear-gradient(100deg, #eebb43, #f8d879 50%, #eebb43);
   padding: 10px 18px calc(10px + env(safe-area-inset-bottom));
   color: #17130b;
   font-family: 'Manrope', Arial, Helvetica, sans-serif;
   font-size: 14px;
-  box-shadow: 0 -8px 30px rgba(227,165,38,.2);
+  line-height: 1.4;
+  text-decoration: none;
+  box-shadow: 0 -6px 26px rgba(227,165,38,.16);
 }
 .coupon-applied-bar svg { flex: 0 0 auto; }
-.coupon-applied-bar strong {
+.coupon-applied-bar__label { white-space: nowrap; }
+.coupon-applied-bar__code {
   min-width: 0;
   max-width: 40%;
   overflow-wrap: anywhere;
   border-radius: 6px;
-  background: rgba(255,255,255,.2);
+  background: rgba(255,255,255,.34);
   padding: 6px 9px;
+  font-weight: 800;
 }
-.coupon-applied-bar a { margin-left: 4px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.coupon-applied-bar__status {
+  flex: 0 0 auto;
+  border: 1px solid rgba(23,19,11,.12);
+  border-radius: 6px;
+  background: rgba(255,255,255,.22);
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
 body:has(.coupon-applied-bar) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 #planos { scroll-margin-top: 32px; }
 
@@ -968,9 +981,9 @@ body:has(.coupon-applied-bar) { padding-bottom: calc(80px + env(safe-area-inset-
     width: 36px;
     height: 36px;
   }
-  .coupon-applied-bar { gap: 7px; padding-inline: 10px; font-size: 11px; }
-  .coupon-applied-bar strong { padding: 5px 7px; }
-  .coupon-applied-bar a { display: none; }
+  .coupon-applied-bar { gap: 8px; padding-inline: 10px; font-size: 12px; }
+  .coupon-applied-bar__code { padding: 5px 7px; }
+  .coupon-applied-bar__status { padding: 5px 7px; font-size: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
